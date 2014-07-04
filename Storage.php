@@ -41,13 +41,15 @@ class Storage {
         $item = array('backupId'=>  $this->backupId, 'value'=>$value);
         
         if(!is_null($description))
-            array_push ($item, 'description', $description);
+            $item['description'] = $description;
         if(!is_null($orgName))
-            array_push ($item, 'organization', $orgName);
+            $item['organization'] = $orgName;
         if(!is_null($spaceName))
-            array_push ($item, 'space', $spaceName);
+            $item['space'] = $spaceName;
+        if(!is_null($appName))
+            $item['app'] = $appName;
         if(!is_null($podioItemId))
-            array_push ($item, 'podioItemId', $podioItemId);
+            $item['podioItemId'] = $podioItemId;
         
         $this->collection->insert($item);
     }

@@ -204,7 +204,6 @@ function backup_app($app, $orgName, $spaceName, $downloadFiles, Storage $storage
                 echo " - " . $item->title . "\n";
 
             $folder_item = fixDirName($item->item_id . '_' . $item->title);
-            $path_item = $path_app . '/' . $folder_item;
             
             unset($itemFile);
             $itemFile = '--- ' . $item->title . ' ---' . "\n";
