@@ -26,8 +26,10 @@ define('ITEM_XLSX_LIMIT', 500);
 
 Podio::$debug = true;
 
+store("asdf");
+
 gc_enable();
-ini_set("memory_limit", "200M");
+ini_set("memory_limit", "100M"); //200M fails on openshift..
 
 global $start;
 $start = time();
@@ -563,6 +565,44 @@ function downloadFileIfHostedAtPodio($folder, $file) {
     }
     unset($filestore);
     return $link;
+}
+
+function store($value) {
+    $dbhost = $OPENSHIFT_MONGODB_DB_HOST;
+    $dbport = $OPENSHIFT_MONGODB_DB_PORT;
+    $user = "admin";
+    $password = "IZ7ZCYaV8KrM";
+    $dbname = 'php';
+    $safe_insert = true;
+
+    $collectionname = 'mytestcollection';
+
+    $mongo = new Mongo("mongodb://$user:$password@$dbhost:$dbport/");
+    $db = $mongo->$dbname;
+    $collection = $db->$collectionname;
+
+    $person = array(
+        'name' => 'Cesar Rodas',
+        'email' => 'crodas@php.net',
+        'address' => array(
+            array(
+                'country' => 'PY',
+                'zip' => '2160',
+                'address1' => 'foo bar'
+            ),
+            array(
+                'country' => 'PY',
+                'zip' => '2161',
+                'address1' => 'foo bar bar foo'
+            ),
+        ),
+        'sessions' => 0,
+    );
+
+    
+    $collection->insert($person, $safe_insert);
+    $person_identifier = $person['_id'];
+    echo "inserted dummy: id=$person_identifier\n";
 }
 
 ?>
