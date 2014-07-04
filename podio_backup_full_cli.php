@@ -28,7 +28,7 @@ define('ITEM_XLSX_LIMIT', 500);
 Podio::$debug = true;
 
 gc_enable();
-ini_set("memory_limit", "100M"); //200M fails on openshift..
+ini_set("memory_limit", "-1"); //200M fails on openshift..
 
 global $start;
 $start = time();

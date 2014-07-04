@@ -36,8 +36,20 @@ class Storage {
         $this->backupId = $backupId;
     }
 
-    function store(&$value, $description, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
-        $this->collection->insert(array('value'=>$value, 'description'=>$description, 'organization'=>$orgName, 'space'=>$spaceName, 'app'=>$appName, 'podioItemId'=>$podioItemId));
+    function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
+        
+        $item = array('backupId'=>  $this->backupId, 'value'=>$value);
+        
+        if(!is_null($description))
+            array_push ($item, 'description', $description);
+        if(!is_null($orgName))
+            array_push ($item, 'organization', $orgName);
+        if(!is_null($spaceName))
+            array_push ($item, 'space', $spaceName);
+        if(!is_null($podioItemId))
+            array_push ($item, 'podioItemId', $podioItemId);
+        
+        $this->collection->insert($item);
     }
 
 }
