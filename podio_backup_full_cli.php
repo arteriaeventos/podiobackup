@@ -26,8 +26,6 @@ define('ITEM_XLSX_LIMIT', 500);
 
 Podio::$debug = true;
 
-store("asdf");
-
 gc_enable();
 ini_set("memory_limit", "100M"); //200M fails on openshift..
 
@@ -89,19 +87,7 @@ $total_time = (time() - $start) / 60;
 echo "Duration: $total_time minutes.\n";
 
 function check_backup_folder() {
-    global $config;
-    $folder = $config['backupTo'];
-    if (!is_dir($folder)) {
-        show_error("ERROR: create a backup folder called '" . $folder . "'");
-        exit();
-    }
-    if (!is_writeable($folder)) {
-        show_error("ERROR: please make sure that the " . $folder . " directory is writeable and has 777 permissions set");
-        exit();
-    }
-    if (!file_exists($folder . "/.htaccess")) {
-        file_put_contents($folder . "/.htaccess", "deny from all\n");
-    }
+    return;
 }
 
 // END check_backup_folder
@@ -165,8 +151,8 @@ function show_success($message) {
  * @param type $app app to backup
  * @param type $path in this folder a subfolder for the app will be created
  */
-function backup_app($app, $path, $downloadFiles) {
-    $path_app = $path . '/' . fixDirName($app->config['name']);
+function backup_app($app, $orgName, $spaceName, $downloadFiles, Storage $storage) {
+    $appName = $app->config['name'];
 
     global $verbose;
 
@@ -174,8 +160,6 @@ function backup_app($app, $path, $downloadFiles) {
         echo "App: " . $app->config['name'] . "\n";
         echo "debug: MEMORY: " . memory_get_usage(true) . " | " . memory_get_usage(false) . "\n";
     }
-
-    mkdir($path_app);
 
     $appFile = "";
 
@@ -205,7 +189,7 @@ function backup_app($app, $path, $downloadFiles) {
         for ($i = 0; $i < sizeof($allitems); $i+=ITEM_XLSX_LIMIT) {
             $itemFile = PodioItem::xlsx($app->app_id, array("limit" => ITEM_XLSX_LIMIT, "offset" => $i));
             RateLimitChecker::preventTimeOut();
-            file_put_contents($path_app . '/' . $app->config['name'] . '_' . $i . '.xlsx', $itemFile);
+            $storage->store($itemFile, $appName . '_' . $i . '.xlsx', $orgName, $spaceName, $appName);
             unset($itemFile);
         }
 
@@ -220,8 +204,7 @@ function backup_app($app, $path, $downloadFiles) {
 
             $folder_item = fixDirName($item->item_id . '_' . $item->title);
             $path_item = $path_app . '/' . $folder_item;
-            mkdir($path_item);
-
+            
             unset($itemFile);
             $itemFile = '--- ' . $item->title . ' ---' . "\n";
             $itemFile .= 'Item ID: ' . $item->item_id . "\n";
@@ -256,11 +239,13 @@ function backup_app($app, $path, $downloadFiles) {
                     $commentsFile .= 'by ' . $comment->created_by->name . ' on ' . $comment->created_on->format('Y-m-d at H:i:s') . "\n----------------------------------------\n" . $comment->value . "\n\n\n";
                     if ($downloadFiles && isset($comment->files) && sizeof($comment->files) > 0) {
                         foreach ($comment->files as $file) {
+                            
                             $link = downloadFileIfHostedAtPodio($path_item, $file);
                             # $link is relative to $path_item (if downloaded):
                             if (!preg_match("/^http/i", $link)) {
                                 $link = RelativePaths::getRelativePath($path_app, $path_item . '/' . $link);
                             }
+
                             $commentsFile .= "File: $link\n";
                             $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                         }
@@ -270,7 +255,7 @@ function backup_app($app, $path, $downloadFiles) {
                 $commentsFile = "\n\n[no comments]\n";
                 #echo "no comments.. (".$item->comment_count.")\n";
             }
-            file_put_contents($path_item . '/' . fixDirName($item->item_id . '-' . $item->title) . '.txt', $itemFile . $commentsFile);
+            $storage->store($itemFile . $commentsFile, fixDirName($item->item_id . '-' . $item->title) . '.txt', $orgName, $spaceName, $appName, $item->item_id);
 
             $appFile .= $itemFile . "\n\n";
         }
@@ -285,10 +270,14 @@ function backup_app($app, $path, $downloadFiles) {
         foreach ($appFiles as $file) {
             if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
                 echo "debug: downloading non item/comment file: $file->name\n";
-                $link = downloadFileIfHostedAtPodio($path_app_files, $file);
-                # $link is relative to $path_item (if downloaded):
-                if (!preg_match("/^http/i", $link)) {
-                    $link = RelativePaths::getRelativePath($path_app, $path_item . '/' . $link);
+                if($downloadFiles) {
+                    $link = downloadFileIfHostedAtPodio($path_app_files, $file);
+                    # $link is relative to $path_item (if downloaded):
+                    if (!preg_match("/^http/i", $link)) {
+                        $link = RelativePaths::getRelativePath($path_app, $path_item . '/' . $link);
+                    }
+                } else {
+                    $link = $file->link;
                 }
                 $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
             }
@@ -297,9 +286,9 @@ function backup_app($app, $path, $downloadFiles) {
         show_error($e);
         $appFile .= "\n\nPodio Error:\n" . $e;
     }
-    file_put_contents($path_app . '/all_items_summary.txt', $appFile);
+    $storage->store($appFile, '/all_items_summary.txt', $orgName, $spaceName, $appName);
     $files_in_app_html .= "</table></body></html>";
-    file_put_contents($path_app . "/files_in_app.html", $files_in_app_html);
+    $storage->store($files_in_app_html, "/files_in_app.html", $orgName, $spaceName, $appName);
     unset($appFile);
     unset($files_in_app_html);
 }
@@ -309,21 +298,16 @@ function do_backup($downloadFiles) {
     if ($verbose)
         echo "Warning: This script may run for a LONG time\n";
 
-    $currentdir = getcwd();
     $timeStamp = date('Y-m-d_H-i');
     $backupTo = $config['backupTo'];
-
-    $path_base = $backupTo . '/' . $timeStamp;
-
-    mkdir($path_base);
+    
+    $storage = new Storage($backupTo, $timeStamp);
 
     $podioOrgs = PodioOrganization::get_all();
 
     foreach ($podioOrgs as $org) { //org_id
         if ($verbose)
             echo "Org: " . $org->name . "\n";
-        $path_org = $path_base . '/' . fixDirName($org->name);
-        mkdir($path_org);
 
         $contactsFile = '';
         try {
@@ -333,13 +317,11 @@ function do_backup($downloadFiles) {
             show_error($e);
             $contactsFile .= "\n\nPodio Error:\n" . $e;
         }
-        file_put_contents($path_org . '/' . 'podio_organization_contacts.txt', $contactsFile);
+        $storage->store($contactsFile, 'podio_organization_contacts.txt', $org->name);
 
         foreach ($org->spaces as $space) { // space_id
             if ($verbose)
                 echo "Space: " . $space->name . "\n";
-            $path_space = $path_org . '/' . fixDirName($space->name);
-            mkdir($path_space);
 
             $contactsFile = '';
             try {
@@ -353,7 +335,7 @@ function do_backup($downloadFiles) {
                 show_error($e);
                 $contactsFile .= "\n\nPodio Error:\n" . $e;
             }
-            file_put_contents($path_space . '/' . 'podio_space_contacts.txt', $contactsFile);
+            $storage->store( $contactsFile, 'podio_space_contacts.txt',$org->name, $space->name);
 
             $spaceApps = array();
             try {
@@ -365,13 +347,13 @@ function do_backup($downloadFiles) {
 
             foreach ($spaceApps as $app) {
 
-                backup_app($app, $path_space, $downloadFiles);
+                backup_app($app, $org->name, $space->name, $downloadFiles, $storage);
             }
         }
     }
 
     if ($verbose)
-        show_success("Backup Completed successfully to " . $currentdir . "/" . $backupTo . "/" . $timeStamp);
+        show_success("Backup Completed successfully to " . $backupTo . "/" . $timeStamp);
 }
 
 // given a podio field object -> returns a human readable format of the field value (or app reference as array (app_id, item_id)
@@ -565,44 +547,6 @@ function downloadFileIfHostedAtPodio($folder, $file) {
     }
     unset($filestore);
     return $link;
-}
-
-function store($value) {
-    $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
-    $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
-    $user = "admin";
-    $password = "IZ7ZCYaV8KrM";
-    $dbname = 'php';
-    $safe_insert = true;
-
-    $collectionname = 'mytestcollection';
-
-    $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
-    $db = $mongo->$dbname;
-    $collection = $db->$collectionname;
-
-    $person = array(
-        'name' => 'Cesar Rodas',
-        'email' => 'crodas@php.net',
-        'address' => array(
-            array(
-                'country' => 'PY',
-                'zip' => '2160',
-                'address1' => 'foo bar'
-            ),
-            array(
-                'country' => 'PY',
-                'zip' => '2161',
-                'address1' => 'foo bar bar foo'
-            ),
-        ),
-        'sessions' => 0,
-    );
-
-    
-    $collection->insert($person);
-    $person_identifier = $person['_id'];
-    echo "inserted dummy: id=$person_identifier\n";
 }
 
 ?>
