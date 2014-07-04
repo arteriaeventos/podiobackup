@@ -577,7 +577,7 @@ function store($value) {
 
     $collectionname = 'mytestcollection';
 
-    $mongo = new Mongo("mongodb://$user:$password@$dbhost:$dbport/");
+    $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
     $db = $mongo->$dbname;
     $collection = $db->$collectionname;
 
@@ -600,7 +600,7 @@ function store($value) {
     );
 
     
-    $collection->insert($person, $safe_insert);
+    $collection->insert($person);
     $person_identifier = $person['_id'];
     echo "inserted dummy: id=$person_identifier\n";
 }
