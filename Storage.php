@@ -24,7 +24,7 @@ class Storage {
     private $collection;
     private $backupId;
 
-    function __construct(string $collection, string $backupId) {
+    function __construct($collection, $backupId) {
         $this->dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
         $this->dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
         $this->mongo = new MongoClient("mongodb://$this->user:$this->password@$this->dbhost:$this->dbport/");
@@ -36,7 +36,7 @@ class Storage {
         $this->backupId = $backupId;
     }
 
-    function store(&$value, string $description, string $orgName = NULL, sting $spaceName = NULL, string $appName = NULL, $podioItemId = NULL) {
+    function store(&$value, $description, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
         $this->collection->insert(array('value'=>$value, 'description'=>$description, 'organization'=>$orgName, 'space'=>$spaceName, 'app'=>$appName, 'podioItemId'=>$podioItemId));
     }
 
