@@ -32,7 +32,7 @@ class PodioFetchAll {
             #$tmp_result = $function($id, array_merge($params, array("limit" => $limit, 'offset' => $limit * $iteration)));
             $tmp_result = call_user_func($function, $id, array_merge($params, array('limit' => $limit, 'offset' => $limit * $iteration)));
             RateLimitChecker::preventTimeOut();
-            #echo "done iteration $iteration\n";
+            echo "done iteration $iteration (result: ".var_dump($tmp_result).")\n";
             $iteration++;
             if (isset($resulttype)) {
                 if (is_array($tmp_result) && isset($tmp_result[$resulttype]) && is_array($tmp_result[$resulttype])) {

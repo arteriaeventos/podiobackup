@@ -183,6 +183,7 @@ function backup_app($app, $orgName, $spaceName, $downloadFiles, Storage $storage
 
 
     try {
+        echo "fetching items for app $app->app_id\n";
         $allitems = PodioFetchAll::iterateApiCall('PodioItem::filter', $app->app_id, array(), ITEM_FILTER_LIMIT, 'items');
 
         echo "app contains " . sizeof($allitems) . " items.\n";
@@ -202,8 +203,6 @@ function backup_app($app, $orgName, $spaceName, $downloadFiles, Storage $storage
 
             if ($verbose)
                 echo " - " . $item->title . "\n";
-
-            $folder_item = fixDirName($item->item_id . '_' . $item->title);
             
             unset($itemFile);
             $itemFile = '--- ' . $item->title . ' ---' . "\n";
