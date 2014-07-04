@@ -568,8 +568,8 @@ function downloadFileIfHostedAtPodio($folder, $file) {
 }
 
 function store($value) {
-    $dbhost = $OPENSHIFT_MONGODB_DB_HOST;
-    $dbport = $OPENSHIFT_MONGODB_DB_PORT;
+    $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
+    $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
     $user = "admin";
     $password = "IZ7ZCYaV8KrM";
     $dbname = 'php';
