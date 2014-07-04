@@ -34,7 +34,7 @@ class PodioFetchAll {
             RateLimitChecker::preventTimeOut();
             echo "done iteration $iteration (result: ".var_dump($tmp_result).")\n";
             $iteration++;
-            if (isset($resulttype)) {
+            if (!is_null($resulttype)) {
                 if (is_array($tmp_result) && isset($tmp_result[$resulttype]) && is_array($tmp_result[$resulttype])) {
                     $result = array_merge($result, $tmp_result[$resulttype]);
                     if (sizeof($tmp_result[$resulttype]) < $limit) {
