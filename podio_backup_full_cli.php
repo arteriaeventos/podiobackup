@@ -19,6 +19,7 @@ require_once '../podio-php/PodioAPI.php'; // include the php Podio Master Class
 require_once 'RelativePaths.php';
 require_once 'RateLimitChecker.php';
 require_once 'PodioFetchAll.php';
+require_once 'Storage.php';
 
 define('FILE_GET_FOR_APP_LIMIT', 100);
 define('ITEM_FILTER_LIMIT', 500);
