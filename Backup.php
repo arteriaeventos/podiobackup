@@ -13,7 +13,7 @@ class Backup {
 
     /**
      *
-     * @var Storage
+     * @var IStorage
      */
     private $storage;
 
@@ -23,13 +23,14 @@ class Backup {
      */
     private $downloadFiles;
 
-    public function __construct(Storage $storage, $downloadFiles) {
+    public function __construct(IStorage $storage, $downloadFiles) {
         $this->storage = $storage;
         $this->downloadFiles = $downloadFiles;
     }
 
     function backup_org($org) {
         echo "TODO: type parameter to: " + get_class($org); //TODO
+        global $verbose;
 
         if ($verbose)
             echo "Org: " . $org->name . "\n";
@@ -50,6 +51,7 @@ class Backup {
     }
 
     function backup_space($space) {
+        global $verbose;
         if ($verbose)
             echo "Space: " . $space->name . "\n";
 
@@ -156,11 +158,7 @@ class Backup {
                 if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
                     echo "debug: downloading non item/comment file: $file->name\n";
                     if ($this->downloadFiles) {
-                        $link = downloadFileIfHostedAtPodio($path_app_files, $file);
-                        # $link is relative to $path_item (if downloaded):
-                        if (!preg_match("/^http/i", $link)) {
-                            $link = RelativePaths::getRelativePath($path_app, $path_item . '/' . $link);
-                        }
+                        $link = $this->storage->storeFile($file);
                     } else {
                         $link = $file->link;
                     }
@@ -179,6 +177,7 @@ class Backup {
     }
 
     function backup_item($item, $appFiles, $path_item, $path_app, &$appFile, $orgName, $spaceName, $appName) {
+        global $verbose;
         if ($verbose)
             echo " - " . $item->title . "\n";
 
@@ -188,11 +187,7 @@ class Backup {
             foreach ($appFiles as $file) {
 
                 if ($file->context['type'] == 'item' && $file->context['id'] == $item->item_id) {
-                    $link = downloadFileIfHostedAtPodio($path_item, $file);
-                    # $link is relative to $path_item (if downloaded):
-                    if (!preg_match("/^http/i", $link)) {
-                        $link = RelativePaths::getRelativePath($path_app, $path_item . '/' . $link);
-                    }
+                    $link = $this->storage->storeFile($file);
                     $itemFile .= "File: $link\n";
                     $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                 }
@@ -211,12 +206,7 @@ class Backup {
                 if ($this->downloadFiles && isset($comment->files) && sizeof($comment->files) > 0) {
                     foreach ($comment->files as $file) {
 
-                        $link = downloadFileIfHostedAtPodio($path_item, $file);
-                        # $link is relative to $path_item (if downloaded):
-                        if (!preg_match("/^http/i", $link)) {
-                            $link = RelativePaths::getRelativePath($path_app, $path_item . '/' . $link);
-                        }
-
+                        $link = $this->storage->storeFile($file);
                         $commentsFile .= "File: $link\n";
                         $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                     }

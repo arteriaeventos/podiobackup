@@ -13,7 +13,7 @@ require_once 'podio-php/PodioAPI.php';
  *
  * @author SCHRED
  */
-class Storage {
+class Storage implements IStorage {
 
     private $dbhost;
     private $dbport;
@@ -63,14 +63,9 @@ class Storage {
         echo "saved filestore to db.\n";
     }
 
-    /**
-     * Backups file if it is hosted by Podio
-     * @param type $file
-     * @return type id
-     */
     function storeFile($file) {
-        global $config;
-
+        echo "storing file: ";
+        var_dump($file);
         $link = $file->link;
         if ($file->hosted_by == "podio") {
             $filename = fixDirName($file->name);
@@ -78,10 +73,10 @@ class Storage {
                 echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
                 return $this->filestore[$file->file_id];
             } else {
-
                 try {
-                    $result = $this->fs->storeBytes($file->getRaw(), array('filename' => $filename));
+                    $result = $this->fs->storeBytes($file->getRaw(), array('filename' => $filename, 'backupId' => $this->backupId, 'originalUrl' => $file->link));
                     RateLimitChecker::preventTimeOut();
+                    $this->filestore[$file->file_id] = $result['_id'];
                     return $result['_id'];
                 } catch (PodioBadRequestError $e) {
                     echo $e->body;   # Parsed JSON response from the API
@@ -94,6 +89,7 @@ class Storage {
         } else {
             #echo "Warning: Not downloading file hosted by ".$file->hosted_by."\n";
         }
+        return $link;
     }
 
     function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
