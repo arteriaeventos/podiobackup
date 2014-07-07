@@ -24,7 +24,7 @@ class PodioFetchAll {
      * @param String $resulttype if set, the result of the call is suspected to be in $result[$resulttype]
      * @return type array of all fetched elements
      */
-    static function iterateApiCall($function, $id, $params = array(), $limit = 100, $resulttype = null) {
+    public static function iterateApiCall($function, $id, $params = array(), $limit = 100, $resulttype = null) {
         $completed = false;
         $iteration = 0;
         $result = array();
@@ -32,43 +32,44 @@ class PodioFetchAll {
             #$tmp_result = $function($id, array_merge($params, array("limit" => $limit, 'offset' => $limit * $iteration)));
             $tmp_result = call_user_func($function, $id, array_merge($params, array('limit' => $limit, 'offset' => $limit * $iteration)));
             RateLimitChecker::preventTimeOut();
-            echo "done iteration $iteration (result: ".var_dump($tmp_result).")\n";
-            
+            echo "done iteration $iteration (result: " . var_dump($tmp_result) . ")\n";
+
             $iteration++;
             if (!is_null($resulttype)) {
-            
-            if ($tmp_result instanceof PodioCollection) {
-                $result = array_merge($result, $tmp_result->_get_items());
-                if ($tmp_result instanceof PodioItemCollection) {
-                    echo "filtered: $tmp_result->filtered, total: $tmp_result->total (limit: $limit)\n";
-                    if (sizeof($tmp_result->_get_items()) < $limit) {
+
+                if ($tmp_result instanceof PodioCollection) {
+                    $result = array_merge($result, $tmp_result->_get_items());
+                    if ($tmp_result instanceof PodioItemCollection) {
+                        echo "filtered: $tmp_result->filtered, total: $tmp_result->total (limit: $limit)\n";
+                        if (sizeof($tmp_result->_get_items()) < $limit) {
+                            $completed = true;
+                        }
+                    } else {
+                        echo "WARNING unexpected collection: " . get_class($tmp_result);
+                    }
+                } else if (isset($resulttype)) {
+                    if (is_array($tmp_result) && isset($tmp_result[$resulttype]) && is_array($tmp_result[$resulttype])) {
+                        $result = array_merge($result, $tmp_result[$resulttype]);
+                        if (sizeof($tmp_result[$resulttype]) < $limit) {
+                            $completed = true;
+                        }
+                    } else {
                         $completed = true;
                     }
                 } else {
-                    echo "WARNING unexpected collection: " . get_class($tmp_result);
-                }
-            } else if (isset($resulttype)) {
-                if (is_array($tmp_result) && isset($tmp_result[$resulttype]) && is_array($tmp_result[$resulttype])) {
-                    $result = array_merge($result, $tmp_result[$resulttype]);
-                    if (sizeof($tmp_result[$resulttype]) < $limit) {
+                    if (is_array($tmp_result)) {
+                        $result = array_merge($result, $tmp_result);
+                        if (sizeof($tmp_result) < $limit) {
+                            $completed = true;
+                        }
+                    } else {
                         $completed = true;
                     }
-                } else {
-                    $completed = true;
                 }
-            } else {
-                if (is_array($tmp_result)) {
-                    $result = array_merge($result, $tmp_result);
-                    if (sizeof($tmp_result) < $limit) {
-                        $completed = true;
-                    }
-                } else {
-                    $completed = true;
-                }
+                unset($tmp_result);
             }
-            unset($tmp_result);
+            return $result;
         }
-        return $result;
     }
 
     public static function podioElements(array $elements) {
