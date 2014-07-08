@@ -102,17 +102,17 @@ function check_config() {
     try {
         Podio::setup($config['podioClientId'], $config['podioClientSecret']);
     } catch (PodioError $e) {
-        show_error("Podio Authentication Failed. Please check the API key and user details.");
+        show_error("Podio Authentication Failed. Please check the API key and user details. (a)");
         return false;
     }
     try {
         Podio::authenticate('password', array('username' => $config['podioUser'], 'password' => $config['podioPassword']));
     } catch (PodioError $e) {
-        show_error("Podio Authentication Failed. Please check the API key and user details.");
+        show_error("Podio Authentication Failed. Please check the API key and user details. (b)");
         return false;
     }
     if (!Podio::is_authenticated()) {
-        show_error("Podio Authentication Failed. Please check the API key and user details.");
+        show_error("Podio Authentication Failed. Please check the API key and user details. (c)");
         return false;
     }
     return true;
@@ -163,6 +163,7 @@ function do_backup($downloadFiles) {
 
     if (array_key_exists('podioSpace', $config)) {
         $space = PodioSpace::get($config['podioSpace']);
+        RateLimitChecker::preventTimeOut();
         echo "backup space: $space->name\n";
         $backup->backup_space($space);
     } else {
