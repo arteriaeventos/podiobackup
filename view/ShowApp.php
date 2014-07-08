@@ -45,9 +45,9 @@ and open the template in the editor.
         var_dump($query);
         echo "\n<br>count=$count skip=$start\n";
         
-        $items->sort(array('_id' => 1)); //here we have an index for sure..
-        $items->limit($count);
-        $items->skip($start);
+        #$items->sort(array('_id' => 1)); //here we have an index for sure..
+        #$items->limit($count);
+        #$items->skip($start);
 
         foreach ($items as $item) {
             $podioItem = unserialize($item['value']);
