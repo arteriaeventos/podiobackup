@@ -106,7 +106,7 @@ class Storage implements IStorage {
             } else {
                 try {
                     $fileId = $this->storeFile(
-                            $file->getRaw(), $filename, $file->mimetype, $file->link, $file->file_id);
+                            $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id);
                     RateLimitChecker::preventTimeOut();
                     $this->filestore[$file->file_id] = $fileId;
                     return $fileId;
