@@ -19,23 +19,63 @@ and open the template in the editor.
         $space = $_GET['space'];
         $app = $_GET['app'];
 
+        $start = $_GET['start'];
+        if (!isset($start) || is_null($start) || $start < 0)
+            $start = 0;
+        $count = $_GET['count'];
+        if (!isset($count) || is_null($count))
+            $count = 50;
+
         echo "<h1>App $app in space $space in organization $org in backup $backupId in collection $collectionname</h1>\n";
         $db = Storage::getMongoDb();
         $collection = $db->selectCollection($collectionname);
         ?>
 
-        <h2>Apps</h2>
+        <h2>Items</h2>
         TODO (incl. paging)
         <?php
-        /*$apps = $collection->distinct('app', array('backupId' => $backupId, 'organization' => $org, 'space'=>$space, 'app'=>$app));
-        if ($apps) {
-            foreach ($apps as $app) {
-                echo "<a href='ShowApp.php?collection=$collectionname&backup=$backupId&org=$org&space=$space&app?$app'>$app</a><br>\n";
-            }
-        } else {
-            echo "<i>no app found in space.</i>\n";
-        }*/
+        $items = $collection->find(
+                array(
+                    'description' => 'original item',
+                    'backupId' => $backupId,
+                    'organization' => $org,
+                    'space' => $space,
+                    'app' => $app));
+        $items->sort(array('_id' => 1)); //here we have an index for sure..
+        $items->limit($count);
+        $items->skip($start);
+
+        foreach ($items as $item) {
+            $podioItem = unserialize($item['value']);
+            $podioItemId = $item['podioItemId'];
+            echo "<a href='ShowItem.php?"
+            . "collection=$collectionname"
+            . "&backup=$backupId"
+            . "&org=$org"
+            . "&space=$space"
+            . "&app?$app"
+            . "&podioItemId=$podioItemId'>"
+            . "$podioItem->name"
+            . "</a><br>\n";
+        }
+
+        echo "<br><a href='ShowApp.php?'"
+        . "collection=$collectionname"
+        . "&backup=$backupId"
+        . "&org=$org"
+        . "&space=$space"
+        . "&app?$app&start=" . ($start + $count) . ">forward</a>\n";
+
+        if ($count > 0) {
+            echo "<br><a href='ShowApp.php?'"
+            . "collection=$collectionname"
+            . "&backup=$backupId"
+            . "&org=$org"
+            . "&space=$space"
+            . "&app?$app&start=" . ($start - $count) . ">backward</a>\n";
+        }
         ?>
+
 
         <h2>Files</h2>
         TODO
