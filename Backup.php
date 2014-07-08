@@ -28,8 +28,7 @@ class Backup {
         $this->downloadFiles = $downloadFiles;
     }
 
-    function backup_org($org) {
-        echo "TODO: type parameter to: " . get_class($org) . "\n"; //TODO
+    function backup_org(PodioOrganization $org) {
         global $verbose;
 
         if ($verbose)

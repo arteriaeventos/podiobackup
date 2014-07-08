@@ -37,7 +37,7 @@ global $start;
 $start = time();
 
 global $config;
-$config_command_line = getopt("fvs:l:", array("backupTo:", "podioClientId:", "podioClientSecret:", "podioUser:", "podioPassword:", "help"));
+$config_command_line = getopt("fvs:l:", array("backupTo:", "podioClientId:", "podioClientSecret:", "podioUser:", "podioPassword:", "podioSpace:", "help"));
 
 $usage = "\nUsage:\n\n" .
         "php podio_backup_full_cli [-f] [-v] [-s PARAMETER_FILE] --backupTo BACKUP_FOLDER" .
@@ -161,7 +161,7 @@ function do_backup($downloadFiles) {
 
     $backup = new Backup($storage, $downloadFiles);
 
-    if (array_key_exists('podioSpace', $config)) {
+    if (array_key_exists("podioSpace", $config)) {
         $space = PodioSpace::get($config['podioSpace']);
         RateLimitChecker::preventTimeOut();
         echo "backup space: $space->name\n";
