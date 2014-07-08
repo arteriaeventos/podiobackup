@@ -217,7 +217,7 @@ class Backup {
             $commentsFile = "\n\n[no comments]\n";
             #echo "no comments.. (".$item->comment_count.")\n";
         }
-        $this->storage->store($itemFile . $commentsFile, fixDirName($item->item_id . '-' . $item->title) . '.txt', $orgName, $spaceName, $appName, $item->item_id);
+        $this->storage->storeFile($itemFile . $commentsFile, fixDirName($item->item_id . '-' . $item->title) . '.txt', 'text/plain', NULL, NULL, $orgName, $spaceName, $appName, $item->item_id);
 
         $this->storage->store($item, 'original item', $orgName, $spaceName, $appName, $item->item_id);
 
