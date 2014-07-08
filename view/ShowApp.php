@@ -48,8 +48,12 @@ and open the template in the editor.
         #$items->sort(array('_id' => 1)); //here we have an index for sure..
         #$items->limit($count);
         #$items->skip($start);
+        
+        echo "\n<br>count: ".$items->count()."\n";
 
         foreach ($items as $item) {
+            echo "<br><br>";
+            var_dump($item);
             $podioItem = unserialize($item['value']);
             $podioItemId = $item['podioItemId'];
             echo "<a href='ShowItem.php?"
