@@ -51,7 +51,8 @@ class Storage implements IStorage {
 
         $filestoreDoc = $this->collection->findOne(array("description" => "filestore"));
         if (is_null($filestoreDoc)) {
-            $this->store(array(), 'filestore');
+            $newFileStore = array();
+            $this->store($newFileStore, 'filestore');
             echo "created filestore\n";
             $filestoreDoc = $this->collection->findOne(array("description" => "filestore"));
         }
