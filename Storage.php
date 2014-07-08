@@ -65,7 +65,7 @@ class Storage implements IStorage {
         echo "saved filestore to db.\n";
     }
 
-    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL) {
+    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
         $metadata = array(
             'filename' => $filename,
             'backupId' => $this->backupId,
@@ -81,6 +81,8 @@ class Storage implements IStorage {
             $metadata['space'] = $spaceName;
         if (!is_null($appName))
             $metadata['app'] = $appName;
+        if(!is_null($podioItemId)) 
+            $metadata['podioItemId'] = $podioItemId;
 
         /* type MongoId */
         $result = $this->fs->storeBytes($bytes, $metadata);

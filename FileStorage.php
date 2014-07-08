@@ -69,7 +69,7 @@ class FileStorage implements IStorage {
         return -1;
     }
 
-    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL) {
+    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
         echo "filestorage not implemented yet.\n";
         return -1;
     }
