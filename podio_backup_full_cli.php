@@ -74,6 +74,7 @@ if (array_key_exists("s", $config_command_line)) {
 }
 
 $downloadFiles = array_key_exists("f", $config);
+echo "downloading files: $downloadFiles\n";
 
 global $verbose;
 $verbose = array_key_exists("v", $config);

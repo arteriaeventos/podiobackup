@@ -94,10 +94,11 @@ class Storage implements IStorage {
     }
 
     function storePodioFile(PodioFile $file) {
-        echo "storing file: ";
+        echo "storing file $file->name\n";
         #var_dump($file);
         $link = $file->link;
         if ($file->hosted_by == "podio") {
+            echo "file hosted by podio\n";
             $filename = fixDirName($file->name);
             if (array_key_exists($file->file_id, $this->filestore)) {
                 echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
@@ -118,7 +119,7 @@ class Storage implements IStorage {
                 }
             }
         } else {
-            #echo "Warning: Not downloading file hosted by ".$file->hosted_by."\n";
+            echo "Not downloading file hosted by ".$file->hosted_by."\n";            
         }
         return $link;
     }
