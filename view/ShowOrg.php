@@ -27,7 +27,7 @@ and open the template in the editor.
         $spaces = $collection->distinct('space', array('backupId' => $backupId, 'organization' => $org));
         if ($spaces) {
             foreach ($spaces as $space) {
-                echo "<a href='ShowSpace.php?collection=$collectionname&backup=$backup&org=$org&space=$space'>$space</a><br>\n";
+                echo "<a href='ShowSpace.php?collection=$collectionname&backup=$backupId&org=$org&space=$space'>$space</a><br>\n";
             }
         } else {
             echo "<i>no space found in organization.</i>\n";

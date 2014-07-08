@@ -16,7 +16,9 @@ and open the template in the editor.
         $db = Storage::getMongoDb();
 
         foreach ($db->getCollectionNames(false) as $collectionname) {
-            echo "<a href='ShowBackups.php?collection=$collectionname'>$collectionname</a><br>\n";
+            if (!in_array($collectionname, array('openshift', 'fs.files', 'fs.chunks'))) {
+                echo "<a href='ShowBackups.php?collection=$collectionname'>$collectionname</a><br>\n";
+            }
         }
         ?>
     </body>

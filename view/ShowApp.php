@@ -30,7 +30,7 @@ and open the template in the editor.
         /*$apps = $collection->distinct('app', array('backupId' => $backupId, 'organization' => $org, 'space'=>$space, 'app'=>$app));
         if ($apps) {
             foreach ($apps as $app) {
-                echo "<a href='ShowApp.php?collection=$collectionname&backup=$backup&org=$org&space=$space&app?$app'>$app</a><br>\n";
+                echo "<a href='ShowApp.php?collection=$collectionname&backup=$backupId&org=$org&space=$space&app?$app'>$app</a><br>\n";
             }
         } else {
             echo "<i>no app found in space.</i>\n";

@@ -26,7 +26,7 @@ and open the template in the editor.
         $orgs = $collection->distinct('organization', array('backupId' => $backupId));
         if ($orgs) {
             foreach ($orgs as $org) {
-                echo "<a href='ShowOrg.php?collection=$collectionname&backup=$backup&org=$org'>$org</a><br>\n";
+                echo "<a href='ShowOrg.php?collection=$collectionname&backup=$backupId&org=$org'>$org</a><br>\n";
             }
         } else {
             echo "<i>no organization found in backup.</i>\n";
