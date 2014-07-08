@@ -82,9 +82,10 @@ class Storage implements IStorage {
         if (!is_null($appName))
             $metadata['app'] = $appName;
 
+        /* type MongoId */
         $result = $this->fs->storeBytes($bytes, $metadata);
 
-        return $result['_id'];
+        return $result->id;
     }
 
     function storePodioFile(PodioFile $file) {
