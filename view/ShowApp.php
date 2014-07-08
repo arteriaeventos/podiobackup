@@ -32,15 +32,19 @@ and open the template in the editor.
         ?>
 
         <h2>Items</h2>
-        TODO (incl. paging)
         <?php
-        $items = $collection->find(
-                array(
-                    'description' => 'original item',
-                    'backupId' => $backupId,
-                    'organization' => $org,
-                    'space' => $space,
-                    'app' => $app));
+        $query = array(
+            'description' => 'original item',
+            'backupId' => $backupId,
+            'organization' => $org,
+            'space' => $space,
+            'app' => $app);
+        
+        $items = $collection->find($query);
+        echo "query: ";
+        var_dump($query);
+        echo "\n<br>count=$count skip=$start\n";
+        
         $items->sort(array('_id' => 1)); //here we have an index for sure..
         $items->limit($count);
         $items->skip($start);
@@ -53,26 +57,26 @@ and open the template in the editor.
             . "&backup=$backupId"
             . "&org=$org"
             . "&space=$space"
-            . "&app?$app"
+            . "&app=$app"
             . "&podioItemId=$podioItemId'>"
             . "$podioItem->name"
             . "</a><br>\n";
         }
 
-        echo "<br><a href='ShowApp.php?'"
+        echo "<br><a href='ShowApp.php?"
         . "collection=$collectionname"
         . "&backup=$backupId"
         . "&org=$org"
         . "&space=$space"
-        . "&app?$app&start=" . ($start + $count) . ">forward</a>\n";
+        . "&app=$app&start=" . ($start + $count) . "'>forward</a>\n";
 
         if ($count > 0) {
-            echo "<br><a href='ShowApp.php?'"
+            echo "<br><a href='ShowApp.php?"
             . "collection=$collectionname"
             . "&backup=$backupId"
             . "&org=$org"
             . "&space=$space"
-            . "&app?$app&start=" . ($start - $count) . ">backward</a>\n";
+            . "&app=$app&start=" . ($start - $count) . "'>backward</a>\n";
         }
         ?>
 
