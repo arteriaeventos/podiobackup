@@ -114,6 +114,7 @@ class Backup {
         try {
             #$appFiles = PodioFile::get_for_app($app->app_id, array('attached_to' => 'item'));
             $appFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', $app->app_id, array(), FILE_GET_FOR_APP_LIMIT);
+            echo "app files: ".  sizeof($appFiles)."\n";
             #var_dump($appFiles);
             PodioFetchAll::flattenObjectsArray($appFiles, PodioFetchAll::podioElements(
                             array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
@@ -151,8 +152,7 @@ class Backup {
             if ($verbose)
                 echo "storing non item/comment files..\n";
             $app_files_folder = 'other_files';
-            $path_app_files = $path_app . '/' . $app_files_folder;
-            mkdir($path_app_files);
+            
             $files_in_app_html .= "<tr><td><b>App Files</b></td><td><a href=$app_files_folder>" . $app_files_folder . "</a></td><td></td></tr>";
             foreach ($appFiles as $file) {
                 if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
