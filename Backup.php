@@ -29,7 +29,7 @@ class Backup {
     }
 
     function backup_org($org) {
-        echo "TODO: type parameter to: " + get_class($org); //TODO
+        echo "TODO: type parameter to: " . get_class($org) . "\n"; //TODO
         global $verbose;
 
         if ($verbose)

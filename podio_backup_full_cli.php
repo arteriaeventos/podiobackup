@@ -42,7 +42,7 @@ $config_command_line = getopt("fvs:l:", array("backupTo:", "podioClientId:", "po
 $usage = "\nUsage:\n\n" .
         "php podio_backup_full_cli [-f] [-v] [-s PARAMETER_FILE] --backupTo BACKUP_FOLDER" .
         " --podioClientId PODIO_CLIENT_ID --podioClientSecret PODIO_CLIENT_SECRET " .
-        "--podioUser PODIO_USERNAME --podioPassword PODIO_PASSWORD\n\n" .
+        "--podioUser PODIO_USERNAME --podioPassword PODIO_PASSWORD  [--podioSpace PODIO_SPACE_ID]\n\n" .
         "php podio_backup_full_cli [-f] [-v] -l PARAMETER_FILE [--backupTo BACKUP_FOLDER]" .
         " [--podioClientId PODIO_CLIENT_ID] [--podioClientSecret PODIO_CLIENT_SECRET] " .
         "[--podioUser PODIO_USERNAME] [--podioPassword PODIO_PASSWORD]\n\n" .
@@ -149,7 +149,6 @@ function show_success($message) {
     echo "Message: " . $message . "\n";
 }
 
-
 function do_backup($downloadFiles) {
     global $config, $verbose;
     if ($verbose)
@@ -157,12 +156,18 @@ function do_backup($downloadFiles) {
 
     $timeStamp = date('Y-m-d_H-i');
     $backupTo = $config['backupTo'];
-    
+
     $storage = new Storage($backupTo, $timeStamp);
-    
+
     $backup = new Backup($storage, $downloadFiles);
-    
-    $backup->backup_all();
+
+    if (array_key_exists('podioSpace', $config)) {
+        $space = PodioSpace::get($config['podioSpace']);
+        echo "backup space: $space->name\n";
+        $backup->backup_space($space);
+    } else {
+        $backup->backup_all();
+    }
 
     if ($verbose)
         show_success("Backup Completed successfully to " . $backupTo . "/" . $timeStamp);

@@ -61,8 +61,11 @@ class Storage implements IStorage {
     }
 
     public function __destruct() {
-        $this->collection->save(array('_id' => $this->filestoreId, 'value' => serialize($this->filestore)));
-        echo "saved filestore to db.\n";
+        $this->collection->save(array(
+            '_id' => $this->filestoreId,
+            'value' => serialize($this->filestore),
+            'description' => 'filestore'));
+        echo "saved filestore to db. (id: $this->filestoreId)\n";
     }
 
     function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
@@ -81,7 +84,7 @@ class Storage implements IStorage {
             $metadata['space'] = $spaceName;
         if (!is_null($appName))
             $metadata['app'] = $appName;
-        if(!is_null($podioItemId)) 
+        if (!is_null($podioItemId))
             $metadata['podioItemId'] = $podioItemId;
 
         /* type MongoId */
@@ -92,7 +95,7 @@ class Storage implements IStorage {
 
     function storePodioFile(PodioFile $file) {
         echo "storing file: ";
-        var_dump($file);
+        #var_dump($file);
         $link = $file->link;
         if ($file->hosted_by == "podio") {
             $filename = fixDirName($file->name);
