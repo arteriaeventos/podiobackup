@@ -45,11 +45,11 @@ class Backup {
         $this->storage->storeFile($contactsFile, 'podio_organization_contacts.txt', 'text/plain', NULL, NULL, $org->name);
 
         foreach ($org->spaces as $space) { // space_id
-            $this->backup_space($space);
+            $this->backup_space($space, $org);
         }
     }
 
-    function backup_space($space) {
+    function backup_space(PodioSpace $space, PodioOrganization $org) {
         global $verbose;
         if ($verbose)
             echo "Space: " . $space->name . "\n";

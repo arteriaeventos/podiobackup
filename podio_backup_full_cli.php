@@ -166,7 +166,7 @@ function do_backup($downloadFiles) {
         $space = PodioSpace::get($config['podioSpace']);
         RateLimitChecker::preventTimeOut();
         echo "backup space: $space->name\n";
-        $backup->backup_space($space);
+        $backup->backup_space($space, PodioOrganization::get($space->org_id));
     } else {
         $backup->backup_all();
     }

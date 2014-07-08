@@ -16,13 +16,7 @@ require_once 'IStorage.php';
  */
 class Storage implements IStorage {
 
-    private $dbhost;
-    private $dbport;
-    private $user = "admin";
-    private $password = "IZ7ZCYaV8KrM";
-    private $dbname = 'php';
     private $db;
-    private $mongo;
     private $collectionname = 'mytestcollection';
     private $collection;
     private $fs;
@@ -38,10 +32,7 @@ class Storage implements IStorage {
     private $filestore;
 
     function __construct($collection, $backupId) {
-        $this->dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
-        $this->dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
-        $this->mongo = new MongoClient("mongodb://$this->user:$this->password@$this->dbhost:$this->dbport/");
-        $this->db = $this->mongo->selectDB($this->dbname);
+        $this->db = Storage::getMongoDb();
         if (isset($collection)) {
             $this->collectionname = $collection;
         }
@@ -66,6 +57,21 @@ class Storage implements IStorage {
             'value' => serialize($this->filestore),
             'description' => 'filestore'));
         echo "saved filestore to db. (id: $this->filestoreId)\n";
+    }
+
+    /**
+     * 
+     * @return MongoDB
+     */
+    public static function getMongoDb() {
+        $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
+        $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
+        $dbname = 'php';
+        $user = "admin";
+        $password = "IZ7ZCYaV8KrM";
+
+        $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
+        return $mongo->selectDB($dbname);
     }
 
     function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
@@ -119,7 +125,7 @@ class Storage implements IStorage {
                 }
             }
         } else {
-            echo "Not downloading file hosted by ".$file->hosted_by."\n";            
+            echo "Not downloading file hosted by " . $file->hosted_by . "\n";
         }
         return $link;
     }
