@@ -3,11 +3,14 @@
 interface IStorage {
 
     /**
-     * Backups file if it is hosted by Podio
-     * @param type $file
+     * Backups file if it is hosted by Podio. Assures file is not downloaded twice.
+     * @param PodioFile $file
      * @return type id/url
      */
-    function storeFile($file);
-    
+    function storePodioFile(PodioFile $file);
+
+    function storeFile(
+    $bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL);
+
     function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
 }

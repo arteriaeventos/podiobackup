@@ -21,7 +21,7 @@ class FileStorage implements IStorage {
         $this->filenameFilestore = $this->filesFolder . '/filestore.php';
     }
 
-    public function storeFile($file) {
+    public function storePodioFile(PodioFile $file) {
         global $config;
 
         $link = $file->link;
@@ -65,7 +65,13 @@ class FileStorage implements IStorage {
     }
 
     public function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
-        
+        echo "item storage not implemented yet.\n";
+        return -1;
+    }
+
+    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL) {
+        echo "filestorage not implemented yet.\n";
+        return -1;
     }
 
 }

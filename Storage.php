@@ -65,7 +65,29 @@ class Storage implements IStorage {
         echo "saved filestore to db.\n";
     }
 
-    function storeFile($file) {
+    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL) {
+        $metadata = array(
+            'filename' => $filename,
+            'backupId' => $this->backupId,
+            'mimeType' => $mimeType);
+
+        if (!is_null($originalUrl))
+            $metadata['originalUrl'] = $originalUrl;
+        if (!is_null($podioFileId))
+            $metadata['podioFileId'] = $podioFileId;
+        if (!is_null($orgName))
+            $metadata['organization'] = $orgName;
+        if (!is_null($spaceName))
+            $metadata['space'] = $spaceName;
+        if (!is_null($appName))
+            $metadata['app'] = $appName;
+
+        $result = $this->fs->storeBytes($bytes, $metadata);
+
+        return $result['_id'];
+    }
+
+    function storePodioFile(PodioFile $file) {
         echo "storing file: ";
         var_dump($file);
         $link = $file->link;
@@ -76,10 +98,11 @@ class Storage implements IStorage {
                 return $this->filestore[$file->file_id];
             } else {
                 try {
-                    $result = $this->fs->storeBytes($file->getRaw(), array('filename' => $filename, 'backupId' => $this->backupId, 'originalUrl' => $file->link));
+                    $fileId = $this->storeFile(
+                            $file->getRaw(), $filename, $file->mimetype, $file->link, $file->file_id);
                     RateLimitChecker::preventTimeOut();
-                    $this->filestore[$file->file_id] = $result['_id'];
-                    return $result['_id'];
+                    $this->filestore[$file->file_id] = $fileId;
+                    return $fileId;
                 } catch (PodioBadRequestError $e) {
                     echo $e->body;   # Parsed JSON response from the API
                     echo $e->status; # Status code of the response

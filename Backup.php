@@ -43,7 +43,7 @@ class Backup {
             show_error($e);
             $contactsFile .= "\n\nPodio Error:\n" . $e;
         }
-        $this->storage->store($contactsFile, 'podio_organization_contacts.txt', $org->name);
+        $this->storage->storeFile($contactsFile, 'podio_organization_contacts.txt', 'text/plain', NULL, NULL, $org->name);
 
         foreach ($org->spaces as $space) { // space_id
             $this->backup_space($space);
@@ -135,7 +135,8 @@ class Backup {
             for ($i = 0; $i < sizeof($allitems); $i+=ITEM_XLSX_LIMIT) {
                 $itemFile = PodioItem::xlsx($app->app_id, array("limit" => ITEM_XLSX_LIMIT, "offset" => $i));
                 RateLimitChecker::preventTimeOut();
-                $this->storage->store($itemFile, $appName . '_' . $i . '.xlsx', $orgName, $spaceName, $appName);
+                $this->storage->storeFile(
+                        $itemFile, $appName . '_' . $i . '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', NULL, NULL, $orgName, $spaceName, $appName);
                 unset($itemFile);
             }
 
@@ -144,7 +145,7 @@ class Backup {
             echo "gc took : " . (time() - $before) . " seconds.\n";
 
             foreach ($allitems as $item) {
-                $this->backup_item($item, $appFiles, $path_item, $path_app, $appFile, $orgName, $spaceName, $appName);
+                $this->backup_item($item, $appFiles, $appFile, $orgName, $spaceName, $appName);
             }
 
             //store non item/comment files:
@@ -158,7 +159,7 @@ class Backup {
                 if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
                     echo "debug: downloading non item/comment file: $file->name\n";
                     if ($this->downloadFiles) {
-                        $link = $this->storage->storeFile($file);
+                        $link = $this->storage->storePodioFile($file);
                     } else {
                         $link = $file->link;
                     }
@@ -169,14 +170,14 @@ class Backup {
             show_error($e);
             $appFile .= "\n\nPodio Error:\n" . $e;
         }
-        $this->storage->store($appFile, '/all_items_summary.txt', $orgName, $spaceName, $appName);
+        $this->storage->storeFile($appFile, 'all_items_summary.txt', 'text/plain', NULL, NULL, $orgName, $spaceName, $appName);
         $files_in_app_html .= "</table></body></html>";
-        $this->storage->store($files_in_app_html, "/files_in_app.html", $orgName, $spaceName, $appName);
+        $this->storage->storeFile($files_in_app_html, "files_in_app.html", 'text/html', NULL, NULL, $orgName, $spaceName, $appName);
         unset($appFile);
         unset($files_in_app_html);
     }
 
-    function backup_item($item, $appFiles, $path_item, $path_app, &$appFile, $orgName, $spaceName, $appName) {
+    function backup_item($item, $appFiles, &$appFile, $orgName, $spaceName, $appName) {
         global $verbose;
         if ($verbose)
             echo " - " . $item->title . "\n";
@@ -187,7 +188,7 @@ class Backup {
             foreach ($appFiles as $file) {
 
                 if ($file->context['type'] == 'item' && $file->context['id'] == $item->item_id) {
-                    $link = $this->storage->storeFile($file);
+                    $link = $this->storage->storePodioFile($file);
                     $itemFile .= "File: $link\n";
                     $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                 }
@@ -206,7 +207,7 @@ class Backup {
                 if ($this->downloadFiles && isset($comment->files) && sizeof($comment->files) > 0) {
                     foreach ($comment->files as $file) {
 
-                        $link = $this->storage->storeFile($file);
+                        $link = $this->storage->storePodioFile($file);
                         $commentsFile .= "File: $link\n";
                         $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                     }
