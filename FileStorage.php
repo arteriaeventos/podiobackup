@@ -1,5 +1,7 @@
 <?php
 
+require_once 'IStorage.php';
+
 /**
  * Description of FileStorage
  *

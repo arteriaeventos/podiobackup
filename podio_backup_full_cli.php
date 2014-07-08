@@ -21,6 +21,7 @@ require_once 'RateLimitChecker.php';
 require_once 'HumanFormat.php';
 require_once 'PodioFetchAll.php';
 require_once 'Storage.php';
+require_once './IStorage.php';
 require_once 'Backup.php';
 
 define('FILE_GET_FOR_APP_LIMIT', 100);

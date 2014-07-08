@@ -7,6 +7,7 @@
  */
 
 require_once 'podio-php/PodioAPI.php';
+require_once 'IStorage.php';
 
 /**
  * Description of Storage
