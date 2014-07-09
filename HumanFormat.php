@@ -41,6 +41,12 @@ class HumanFormat {
         return $itemFile;
     }
 
+    public static function br2nl($string) {
+        $s2 = preg_replace('/\<br(\s*)?\/?\>/i', "\n", $string);
+        $s3 = preg_replace('/<p>/i', "\n", $s2);
+        return $s3;
+    }
+
     /**
      * given a podio field object -> returns a human readable format of the field value (or app reference as array (app_id, item_id)
      * @param type $field should be of type PodioItemField
@@ -54,7 +60,7 @@ class HumanFormat {
                 $value = $field->values;
                 $value = str_ireplace('</p>', '</p><br>', $value);
                 $value = preg_replace('/\<br(\s*)?\/?\>/i', "\n", $value);
-                $value = strip_tags(br2nl($value));
+                $value = strip_tags(HumanFormat::br2nl($value));
                 $value = str_replace('&nbsp;', ' ', $value);
                 $value = str_replace('&amp;', '&', $value);
             } else if (is_numeric($field->values)) {

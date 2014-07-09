@@ -232,12 +232,6 @@ function fixDirName($name) {
     return $name;
 }
 
-function br2nl($string) {
-    $s2 = preg_replace('/\<br(\s*)?\/?\>/i', "\n", $string);
-    $s3 = preg_replace('/<p>/i', "\n", $s2);
-    return $s3;
-}
-
 /**
  * If $file represents a file hosted by podio, it is downloaded to $folder.
  * In any case a link to the file is returned (relative to $folder).
