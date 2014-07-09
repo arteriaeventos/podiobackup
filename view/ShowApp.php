@@ -42,15 +42,15 @@ and open the template in the editor.
             'app' => $app);
         
         $items = $collection->find($query);
-        echo "query: ";
-        var_dump($query);
-        echo "\n<br>count=$count skip=$start\n";
+        #echo "query: ";
+        #var_dump($query);
+        #echo "\n<br>count=$count skip=$start\n";
         
         #$items->sort(array('_id' => 1)); //here we have an index for sure..
         #$items->limit($count);
         #$items->skip($start);
         
-        echo "\n<br>count: ".$items->count()."\n";
+        #echo "\n<br>count: ".$items->count()."\n";
 
         foreach ($items as $item) {
             echo "<br><br>";
@@ -64,7 +64,7 @@ and open the template in the editor.
             . "&space=$space"
             . "&app=$app"
             . "&podioItemId=$podioItemId'>"
-            . "$podioItem->name|$podioItem->title"
+            . "$podioItem->title"
             . "</a><br>\n";
         }
 
@@ -75,7 +75,7 @@ and open the template in the editor.
         . "&space=$space"
         . "&app=$app&start=" . ($start + $count) . "'>forward</a>\n";
 
-        if ($count > 0) {
+        if ($start > 0) {
             echo "<br><a href='ShowApp.php?"
             . "collection=$collectionname"
             . "&backup=$backupId"
