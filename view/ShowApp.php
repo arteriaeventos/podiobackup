@@ -64,7 +64,7 @@ and open the template in the editor.
             . "&space=$space"
             . "&app=$app"
             . "&podioItemId=$podioItemId'>"
-            . "$podioItem->name"
+            . "$podioItem->name|$podioItem->title"
             . "</a><br>\n";
         }
 
