@@ -20,7 +20,7 @@ and open the template in the editor.
         $org = $_GET['org'];
         $space = $_GET['space'];
         $app = $_GET['app'];
-        $podioItemId = $_GET['podioItemId'];
+        $podioItemId = intval($_GET['podioItemId']);
 
         $db = Storage::getMongoDb();
         $collection = $db->selectCollection($collectionname);
