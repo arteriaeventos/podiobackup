@@ -12,6 +12,7 @@ and open the template in the editor.
     <body>
         <?php
         require_once '../Storage.php';
+        require_once '../podio-php/PodioAPI.php';
 
         $collectionname = $_GET['collection'];
         $backupId = $_GET['backup'];
