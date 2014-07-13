@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
+        <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
+    </head>
+    <body>
+
+        <div id="login">
+            <input id="username" type="text" /> 
+            <input id="password" type="password" /> 
+            <button id="loginbutton">Login</button> 
+        </div>
+        <div id="dialog-error" title="Error: Login">
+            <p>Could not login:</p>
+            <pre id="dialog-error-msg"></pre>
+        </div>
+
+        <div style="overflow: hidden; padding: 20px">
+            <div id="treeview"  style="float: left"></div>
+            <div style="float: left; padding-left: 50px" id="currentcontent">
+                <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
+                    <h1>App</h1>
+                </div>
+                <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
+                    <h1>Organization</h1>
+                </div>
+                <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
+                    <h1>Space</h1>
+                </div>
+                <div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration" style="display: none">
+                    <h1>Backup Iteration</h1>
+                </div>
+                <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection" style="display: none">
+                    <h1>Backup</h1>
+                </div>
+                <div id="backupcontent-start" class="backupcontent backupcontent-start">
+                    <h1>Welcome</h1>
+                    <p>Browse backups in navigation.</p>
+                </div>
+            </div>
+        </div>
+        <div id="results"><b>Results</b><br></div>
+
+        <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
+        <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
+        <script src="jstree/dist/jstree.js"></script>
+
+        <script>
+
+            jQuery(document).ready(function() {
+
+                var types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*/];
+
+                var jstree = $('#treeview').jstree({
+                    'core': {
+                        "check_callback": true //allow manual node add/remove!
+                    }
+                });
+
+                console.log('created tree: ' + jstree);
+
+                $('#treeview').on("changed.jstree", function(e, data) {
+                    console.log("changed.jstree");
+                    console.log(data.selected);
+                    console.log(e);
+                });
+
+                $('#treeview').on('select_node.jstree', function(e, data) {
+                    console.log('select_node');
+                    console.log(data);
+                    $('.backupcontent').hide();
+                    switch (data.node.data.type) {
+                        case 0:
+                            $('#backupcontent-start').show();
+                            break;
+                        case 1:
+                            $('#backupcontent-backupcollection').show();
+                            break;
+                        case 2:
+                            $('#backupcontent-backupiteration').show();
+                            break;
+                        case 3:
+                            $('#backupcontent-org').show();
+                            break;
+                        case 4:
+                            $('#backupcontent-space').show();
+                            break;
+                        case 5:
+                            $('#backupcontent-app').show();
+                            break;
+                        default :
+                            console.warn('unexpected type: ' + data.node.data.type)
+                            $('#backupcontent-start').show();
+                    }
+                });
+
+                $('#treeview').on('open_node.jstree', function(e, data) {
+                    console.log('opend node');
+                    console.log(data);
+                    if (data.node.data.expanded === false) {
+                        console.log('expanding new node..');
+                        $.ajax({
+                            url: data.node.data.url,
+                            beforeSend: function(xhr) {
+                                xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
+                            },
+                            error: function(msg) {
+                                console.log('error on ajax call:');
+                                console.log(msg);
+                            },
+                            success: function(msg) {
+                                //todo remove loading..
+                                $('#treeview').jstree(true).delete_node(data.node.children[0]);
+                                data.node.data.expanded = true;
+
+                                var nexttype = types[data.node.data.type + 1];
+                                for (i in msg) {
+                                    $("#results").append("item: " + msg[i].toString() + "<br>");
+                                    var node = $('#treeview').jstree(true).create_node(data.node, msg[i]);
+                                    $('#treeview').jstree(true).get_node(node).data = {
+                                        expanded: false,
+                                        type: data.node.data.type + 1,
+                                        url: data.node.data.url + '/' + msg[i].toString() + '/' + nexttype
+                                    };
+                                    if (types.length > data.node.data.type + 1) {
+                                        $('#treeview').jstree(true).create_node(node, 'loading..');
+                                    } else {
+                                        console.log('dont add loading child to last leaf..')
+                                        console.log(types);
+                                        console.log(types.length);
+                                        console.log(data.node.data.type);
+                                        console.log(data.node.data.type + 2);
+                                    }
+                                }
+                            }
+                        })
+                    }
+                });
+
+                $("#dialog-error").dialog({
+                    autoOpen: false,
+                    width: 400,
+                    buttons: [
+                        {
+                            text: "Ok",
+                            click: function() {
+                                $(this).dialog("close");
+                            }
+                        }
+                    ]
+                });
+
+                $('#loginbutton').on('click', function(e, data) {
+                    var user = $('#username').val();
+                    var password = $('#password').val();
+                    $.ajax({
+                        url: '../login',
+                        beforeSend: function(xhr) {
+                            xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(user + ':' + password));
+                        },
+                        success: function(msg) {
+                            $('#login').hide('slow');
+                            currentuser = user;
+                            currentpassword = password;
+                        },
+                        error: function(msg) {
+                            $('#dialog-error-msg').text(msg['responseText']);
+                            $('#dialog-error').dialog('open');
+                        }
+
+                    });
+                });
+
+                $('#treeview').on('create_node.jstree', function(e, data) {
+                    console.log('created node: ' + data.node.text);
+                });
+
+                var rootnode = $('#treeview').jstree(true).create_node('#', 'All visible Backups');
+                $('#treeview').jstree(true).get_node(rootnode).data = {
+                    expanded: false,
+                    type: 0,
+                    url: '../' + types[0]
+                };
+                $('#treeview').jstree(true).create_node(rootnode, 'loading..');
+
+            });
+
+
+
+        </script>
+    </body>
+</html>
