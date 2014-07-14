@@ -23,6 +23,10 @@ and open the template in the editor.
             <p>Could not login:</p>
             <pre id="dialog-error-msg"></pre>
         </div>
+        <div id="dialog-ajax-error" title="Error">
+            <p>The following error occured:</p>
+            <pre id="dialog-ajax-error-msg"></pre>
+        </div>
 
         <div style="overflow: hidden; padding: 20px">
             <div id="treeview"  style="float: left"></div>
@@ -116,6 +120,8 @@ and open the template in the editor.
                             error: function(msg) {
                                 console.log('error on ajax call:');
                                 console.log(msg);
+                                $('#dialog-ajax-error-msg').text(msg['responseText']);
+                                $('#dialog-ajax-error').dialog('open');
                             },
                             success: function(msg) {
                                 //todo remove loading..
@@ -144,6 +150,19 @@ and open the template in the editor.
                             }
                         })
                     }
+                });
+
+                $("#dialog-ajax-error").dialog({
+                    autoOpen: false,
+                    width: 400,
+                    buttons: [
+                        {
+                            text: "Ok",
+                            click: function() {
+                                $(this).dialog("close");
+                            }
+                        }
+                    ]
                 });
 
                 $("#dialog-error").dialog({
