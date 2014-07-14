@@ -3,7 +3,7 @@
 	url = https://github.com/podio/podio-php.git
 [submodule "view/jstree"]
 	path = view/jstree
-	url = git@github.com:vakata/jstree.git
+	url = https://github.com/vakata/jstree.git
 [submodule "flight"]
 	path = flight
 	url = https://github.com/mikecao/flight.git
