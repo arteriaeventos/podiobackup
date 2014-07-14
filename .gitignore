@@ -11,3 +11,4 @@ backup*
 bak*
 /nbproject/
 /*.out
+/rockmongo-1.1.7/

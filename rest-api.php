@@ -29,7 +29,8 @@ function getMongo() {
  * @return MongoDB DB containing all backups for the current user
  */
 function getDbForUser() {
-    return getMongo()->selectDB(getUser()['db']);
+    $curr_user = getUser();
+    return getMongo()->selectDB($curr_user['db']);
 }
 
 /**
@@ -43,13 +44,18 @@ function getUserCollection() {
 /**
  * returns user or sends http error if user is not found/authorized
  * @global type $user
- * @return type
+ * @return array
  */
 function getUser() {
     global $user;
+
     if (!isset($user)) {
-        if (array_key_exists('Authorization', getallheaders()) && isset(getallheaders()['Authorization']) && !is_null(getallheaders()['Authorization'])) {
-            $user_password_base64 = str_replace('Basic ', '', getallheaders()['Authorization']);
+        $headers = getallheaders();
+        error_log("\nheaders: " . var_export($headers) . "\n", 3, 'myphperror.log');
+        $basic_auth_header = 'Authorization';
+        $session_header = 'PhpBackupLoginSession';
+        if (array_key_exists($basic_auth_header, $headers) && isset($headers[$basic_auth_header]) && !is_null($headers[$basic_auth_header])) {
+            $user_password_base64 = str_replace('Basic ', '', $headers[$basic_auth_header]);
             $user_password = base64_decode($user_password_base64);
 
             $username = strtok($user_password, ':');
@@ -58,6 +64,15 @@ function getUser() {
             error_log("looking up user: $username/$password\n", 3, 'myphperror.log');
 
             $user = getUserCollection()->findOne(array('user' => $username, 'password' => $password));
+            if (is_null($user)) {
+                Flight::halt(401, 'user/password not found.');
+            }
+        } elseif (array_key_exists($session_header, $headers) && isset($headers[$session_header]) && !is_null($headers[$session_header])) {
+            $session_header_content = $headers[$session_header];
+            $user = getUserCollection()->findOne(array('loginsession' => $session_header_content));
+            if (is_null($user)) {
+                Flight::halt(401, 'session not found.');
+            }
         } else {
             Flight::halt(401, 'no credentials provided.');
         }
@@ -66,12 +81,10 @@ function getUser() {
 }
 
 /**
- * Checks if user is authorized (http basic header)
+ * Checks if user is authorized (http basic auth or session header)
  */
 function checkLogin() {
-    if (is_null(getUser())) {
-        Flight::halt(401, 'user/password not found.');
-    }
+    getUser();
 }
 
 function createUserDbName($user) {
@@ -83,7 +96,19 @@ Flight::set('flight.log_errors', true);
 
 Flight::route('/login', function() {
     checkLogin();
-    Flight::halt(200);
+    $curr_user = getUser();
+    if (!isset($curr_user['loginsession'])) {
+        $curr_user['loginsession'] = md5($curr_user['user'] . time());
+        getUserCollection()->save($curr_user);
+    }
+    Flight::json(array('loginsession' => $curr_user['loginsession']));
+});
+
+Flight::route('/logout', function() {
+    $curr_user = getUser();
+    unset($curr_user['loginsession']);
+    getUserCollection()->save($curr_user);
+    Flight::halt(204);
 });
 
 Flight::route('POST /register', function() {

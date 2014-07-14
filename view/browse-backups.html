@@ -6,7 +6,7 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        <title>TODO supply a title</title>
+        <title>Browse Backups</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width">
         <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
@@ -19,10 +19,10 @@ and open the template in the editor.
             <input id="password" type="password" /> 
             <button id="loginbutton">Login</button> 
         </div>
-        <div id="dialog-error" title="Error: Login">
-            <p>Could not login:</p>
-            <pre id="dialog-error-msg"></pre>
+        <div id="logout" style="display: none">
+            <button id="logoutbutton">Logout</button>
         </div>
+
         <div id="dialog-ajax-error" title="Error">
             <p>The following error occured:</p>
             <pre id="dialog-ajax-error-msg"></pre>
@@ -57,10 +57,28 @@ and open the template in the editor.
         <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
         <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
         <script src="jstree/dist/jstree.js"></script>
+        <script src="jquery.cookie-1.4.1.min.js"></script>
 
         <script>
 
             jQuery(document).ready(function() {
+
+                var logincookie = $.cookie('podio_backup_login_session');
+                if (typeof logincookie !== 'undefined') {
+                    loginsession = logincookie;
+                    $('#login').hide();
+                    $('#logout').hide();
+                    $.ajax({
+                        url: '../login',
+                        success: function(msg) {
+                            $('#logout').show();
+                        },
+                        error: function(msg) {
+                            console.log('auto login error');
+                            $('#login').show();
+                        }
+                    })
+                }
 
                 var types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*/];
 
@@ -107,6 +125,30 @@ and open the template in the editor.
                     }
                 });
 
+                $(document).ajaxSend(function(event, jqXHR, ajaxOptions) {
+                    if (typeof loginsession !== 'undefined') {
+                        jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
+                        console.log('using login session:');
+                        console.log(loginsession);
+                    } else if (typeof currentuser !== 'undefined') {
+                        jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
+                    } else {
+                        console.log('no login information found.');
+                    }
+                });
+
+                $.ajaxPrefilter(function(options) {
+                    console.log('ajaxPrefilter');
+                    console.log(options);
+                    options.error = function(msg) {
+                        console.log('error on ajax call:');
+                        console.log(msg);
+                        $('#dialog-ajax-error-msg').text(msg['responseText']);
+                        $('#dialog-ajax-error').dialog('open');
+                    };
+
+                });
+
                 $('#treeview').on('open_node.jstree', function(e, data) {
                     console.log('opend node');
                     console.log(data);
@@ -114,15 +156,6 @@ and open the template in the editor.
                         console.log('expanding new node..');
                         $.ajax({
                             url: data.node.data.url,
-                            beforeSend: function(xhr) {
-                                xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
-                            },
-                            error: function(msg) {
-                                console.log('error on ajax call:');
-                                console.log(msg);
-                                $('#dialog-ajax-error-msg').text(msg['responseText']);
-                                $('#dialog-ajax-error').dialog('open');
-                            },
                             success: function(msg) {
                                 //todo remove loading..
                                 $('#treeview').jstree(true).delete_node(data.node.children[0]);
@@ -178,6 +211,18 @@ and open the template in the editor.
                     ]
                 });
 
+                $('#logoutbutton').on('click', function(e, data) {
+                    $.ajax({
+                        url: '../logout',
+                        success: function(msg) {
+                            $('#login').show('slow');
+                            $('#logout').hide('slow');
+                            $.removeCookie('podio_backup_login_session', {path: '/'});
+                            location.reload();
+                        }
+                    });
+                });
+
                 $('#loginbutton').on('click', function(e, data) {
                     var user = $('#username').val();
                     var password = $('#password').val();
@@ -188,12 +233,15 @@ and open the template in the editor.
                         },
                         success: function(msg) {
                             $('#login').hide('slow');
+                            $('#logout').show('slow');
+                            console.log('login successfull');
+                            console.log(msg);
                             currentuser = user;
                             currentpassword = password;
-                        },
-                        error: function(msg) {
-                            $('#dialog-error-msg').text(msg['responseText']);
-                            $('#dialog-error').dialog('open');
+                            loginsession = msg['loginsession'];
+                            $.cookie('podio_backup_login_session', msg['loginsession'], {expires: 7, path: '/'});
+                            console.log('stored login session in cookie');
+                            console.log(msg['loginsession']);
                         }
 
                     });
