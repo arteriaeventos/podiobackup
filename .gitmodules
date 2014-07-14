@@ -1,3 +1,6 @@
 [submodule "podio-php"]
 	path = podio-php
 	url = https://github.com/podio/podio-php.git
+[submodule "view/jstree"]
+	path = view/jstree
+	url = git@github.com:vakata/jstree.git
