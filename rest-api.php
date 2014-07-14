@@ -1,6 +1,6 @@
 <?php
 
-require 'flight/Flight.php';
+require 'flight/flight/Flight.php';
 
 /**
  * 

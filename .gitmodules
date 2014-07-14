@@ -4,3 +4,6 @@
 [submodule "view/jstree"]
 	path = view/jstree
 	url = git@github.com:vakata/jstree.git
+[submodule "flight"]
+	path = flight
+	url = git@github.com:mikecao/flight.git
