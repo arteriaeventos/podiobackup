@@ -11,6 +11,7 @@ and open the template in the editor.
         <meta name="viewport" content="width=device-width">
         <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
         <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
+        <link href="jqGrid/css/ui.jqgrid.css" rel="stylesheet">
     </head>
     <body>
 
@@ -33,6 +34,8 @@ and open the template in the editor.
             <div style="float: left; padding-left: 50px" id="currentcontent">
                 <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
                     <h1>App</h1>
+                    <table id="content-app"></table>
+                    <div id="content-app-pager"></div> 
                 </div>
                 <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
                     <h1>Organization</h1>
@@ -53,11 +56,14 @@ and open the template in the editor.
             </div>
         </div>
         <div id="results"><b>Results</b><br></div>
+        <pre id="jsonoutput"></pre>
 
         <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
         <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
         <script src="jstree/dist/jstree.js"></script>
         <script src="jquery.cookie-1.4.1.min.js"></script>
+        <script src="jqGrid/js/i18n/grid.locale-en.js"></script>
+        <script src="jqGrid/js/jquery.jqGrid.src.js"></script>
 
         <script>
 
@@ -75,6 +81,8 @@ and open the template in the editor.
                         },
                         error: function(msg) {
                             console.log('auto login error');
+                            console.log(loginsession);
+                            console.log(msg);
                             $('#login').show();
                         }
                     })
@@ -118,6 +126,44 @@ and open the template in the editor.
                             break;
                         case 5:
                             $('#backupcontent-app').show();
+
+                            $("#content-app").jqGrid({
+                                datatype: function(postdata) {
+                                    console.log('loading grid:');
+                                    console.log(postdata);
+                                    var thegrid = $("#content-app")/*[0]*/;
+                                    for (i = 0; i < 20; i++) {
+
+
+                                        thegrid.addRowData("1" + i, {
+                                            podioid: "my-podio-id-" + i,
+                                            title: "my-title"
+                                        });
+                                    }
+                                    thegrid.setGridParam({lastpage: 40})/*.trigger("reloadGrid") CAUSES ENDLESS LOOP!*/;
+                                    console.log('using url: ' + data.node.data.url);
+                                    $.ajax({
+                                        url: data.node.data.url,
+                                        data: {start: 0, count: 10},
+                                        success: function(msg) {
+                                            //thegrid.addXmlData(xmldata.responseXML);
+                                            console.log('fetched table content');
+                                            console.log(msg);
+                                            $('#jsonoutput').text(msg);
+                                        }
+                                    });
+                                },
+                                colNames: ['Podio ID', 'Title'],
+                                colModel: [
+                                    {name: 'podioid', index: 'podioid'/*, width: 55*/},
+                                    {name: 'title', index: 'title'/*, width: 90*/},
+                                ],
+                                pager: '#content-app-pager',
+                                rowNum: 10,
+                                rowList: [10, 20, 30],
+                                viewrecords: true,
+                                caption: 'My first grid'
+                            });
                             break;
                         default :
                             console.warn('unexpected type: ' + data.node.data.type)
@@ -162,6 +208,9 @@ and open the template in the editor.
                                 data.node.data.expanded = true;
 
                                 var nexttype = types[data.node.data.type + 1];
+                                if (typeof nexttype === 'undefined') {
+                                    nexttype = 'item';
+                                }
                                 for (i in msg) {
                                     $("#results").append("item: " + msg[i].toString() + "<br>");
                                     var node = $('#treeview').jstree(true).create_node(data.node, msg[i]);

@@ -95,7 +95,6 @@ function createUserDbName($user) {
 Flight::set('flight.log_errors', true);
 
 Flight::route('/login', function() {
-    checkLogin();
     $curr_user = getUser();
     if (!isset($curr_user['loginsession'])) {
         $curr_user['loginsession'] = md5($curr_user['user'] . time());
@@ -130,7 +129,30 @@ Flight::route('POST /register', function() {
         return;
     }
 });
-//backupcollection
+
+
+Flight::route('/backupcollection/count', function() {
+    Flight::json(sizeof(getDbForUser()->getCollectionNames()));
+});
+
+Flight::route('/backupcollection/@backupcollection/backupiteration/count', function($backupcollection) {
+    $collection = getDbForUser()->selectCollection($backupcollection);
+    Flight::json(sizeof($collection->distinct('backupId')));
+});
+
+Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/app/@app/item/count', function($backupcollection, $backupiteration, $org, $space, $app) {
+    $query = array(
+        'description' => 'original item',
+        'backupId' => $backupiteration,
+        'organization' => $org,
+        'space' => $space,
+        'app' => $app
+    );
+
+    $collection = getDbForUser()->selectCollection($backupcollection);
+    $items = $collection->find($query);
+    Flight::json(sizeof($items));
+});
 
 /* browsing */
 Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiteration/org(/@org/space(/@space/app(/@app/item(/@item))))))', function($backupcollection, $backupiteration, $org, $space, $app, $item) {
@@ -180,11 +202,13 @@ Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiter
             $items->skip($start);
         }
 
+        error_log("fetching $count items. start=$start\n", 3, 'myphperror.log');
+
         $result = array();
 
         foreach ($items as $item) {
             $podioItem = unserialize($item['value']);
-            array_push($result, $podioItem);
+            array_push($result, $podioItem->as_json());
         }
         Flight::json($result);
     }
