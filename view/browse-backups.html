@@ -55,6 +55,23 @@ and open the template in the editor.
                 <div id="backupcontent-start" class="backupcontent backupcontent-start">
                     <h1>Welcome</h1>
                     <p>Browse backups in navigation.</p>
+                    <h2>Create new backup</h2>
+                    <div title="Create new backup">
+                        <table>
+                            <tr>
+                                <td>Name</td>
+                                <td><input id="create_backup_collection_name" type="text" title="Name"></td>
+                            </tr>
+                            <tr>
+                                <td>Podio Space ID (optional)</td>
+                                <td><input id="create_backup_collection_space_id" type="text" title="Podio Space ID (optional)"></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><input type="button" value="Create" id="create_backup_collection_button" /></td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,12 +98,15 @@ and open the template in the editor.
                 console.log('parentnode:');
                 console.log(parentnode);
                 var tree = $('#treeview').jstree(true);
-                var node = parentnode === undefined ? tree.get_selected(true)[0] : parentnode;
+                var node = parentnode === undefined ? tree.get_selected(true)[0] : tree.get_node(parentnode);
                 tree.close_node(node);
                 tree.delete_node(node.children);
                 node.data.expanded = false;
                 if (types.length > node.data.type + 1) {
                     tree.create_node(node, 'loading..');
+                }
+                if (parentnode !== undefined) {
+                    tree.select_node(node);
                 }
 
             }
@@ -296,7 +316,9 @@ and open the template in the editor.
                         url: currententityurl,
                         type: 'DELETE',
                         success: function(msg) {
-                            // TODO reload subtree
+                            var tree = $('#treeview').jstree(true);
+                            var selectedNode = tree.get_selected(true)[0];
+                            reloadSubtree(tree.get_parent(selectedNode));
                         }
                     });
                 });
@@ -316,6 +338,22 @@ and open the template in the editor.
                         }
                     });
 
+                });
+
+                $('#create_backup_collection_button').on('click', function(e, data) {
+                    console.log('creating new backup.');
+                    var url = '../backupcollection/' + $('#create_backup_collection_name').val() + '?spaceId=' + $('#create_backup_collection_space_id').val();
+                    console.log('creating backup via url: ' + url);
+                    $.ajax({
+                        type: 'PUT',
+                        url: url,
+                        data: {spaceId: $('#create_backup_collection_space_id').val()},
+                        success: function(msg) {
+                            console.log('created new backup:');
+                            console.log(msg);
+                            reloadSubtree();
+                        }
+                    });
                 });
 
                 $('#logoutbutton').on('click', function(e, data) {
