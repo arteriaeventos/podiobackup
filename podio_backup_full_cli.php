@@ -37,12 +37,12 @@ global $start;
 $start = time();
 
 global $config;
-$config_command_line = getopt("fvs:l:", array("backupTo:", "podioClientId:", "podioClientSecret:", "podioUser:", "podioPassword:", "podioSpace:", "help"));
+$config_command_line = getopt("fvs:l:", array("db:", "backupTo:", "podioClientId:", "podioClientSecret:", "podioUser:", "podioPassword:", "podioSpace:", "help"));
 
 $usage = "\nUsage:\n\n" .
         "php podio_backup_full_cli [-f] [-v] [-s PARAMETER_FILE] --backupTo BACKUP_FOLDER" .
         " --podioClientId PODIO_CLIENT_ID --podioClientSecret PODIO_CLIENT_SECRET " .
-        "--podioUser PODIO_USERNAME --podioPassword PODIO_PASSWORD  [--podioSpace PODIO_SPACE_ID]\n\n" .
+        "--podioUser PODIO_USERNAME --podioPassword PODIO_PASSWORD --db MONGO_DB  [--podioSpace PODIO_SPACE_ID]\n\n" .
         "php podio_backup_full_cli [-f] [-v] -l PARAMETER_FILE [--backupTo BACKUP_FOLDER]" .
         " [--podioClientId PODIO_CLIENT_ID] [--podioClientSecret PODIO_CLIENT_SECRET] " .
         "[--podioUser PODIO_USERNAME] [--podioPassword PODIO_PASSWORD]\n\n" .
@@ -157,8 +157,9 @@ function do_backup($downloadFiles) {
 
     $timeStamp = date('Y-m-d_H-i');
     $backupTo = $config['backupTo'];
+    $db = $config['db'];
 
-    $storage = new Storage($backupTo, $timeStamp);
+    $storage = new Storage($db, $backupTo, $timeStamp);
 
     $backup = new Backup($storage, $downloadFiles);
 

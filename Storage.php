@@ -31,8 +31,8 @@ class Storage implements IStorage {
      */
     private $filestore;
 
-    function __construct($collection, $backupId) {
-        $this->db = Storage::getMongoDb();
+    function __construct($dbname, $collection, $backupId) {
+        $this->db = Storage::getMongo()->selectDB($dbname);
         if (isset($collection)) {
             $this->collectionname = $collection;
         }
@@ -61,17 +61,33 @@ class Storage implements IStorage {
 
     /**
      * 
+     * @global type $mongo
+     * @return \MongoClient
+     */
+    public static function getMongo() {
+        global $mongo;
+        if (!isset($mongo) || is_null($mongo)) {
+            $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
+            if ($dbhost != false) {
+                $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
+                $user = "admin";
+                $password = "IZ7ZCYaV8KrM";
+
+                $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
+            } else {
+                $mongo = new MongoClient();
+            }
+        }
+        return $mongo;
+    }
+
+    /**
+     * 
      * @return MongoDB
      */
     public static function getMongoDb() {
-        $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
-        $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
         $dbname = 'php';
-        $user = "admin";
-        $password = "IZ7ZCYaV8KrM";
-
-        $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
-        return $mongo->selectDB($dbname);
+        return getMongo()->selectDB($dbname);
     }
 
     function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
