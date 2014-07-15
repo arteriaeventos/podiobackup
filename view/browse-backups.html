@@ -19,6 +19,7 @@ and open the template in the editor.
             <input id="username" type="text" /> 
             <input id="password" type="password" /> 
             <button id="loginbutton">Login</button> 
+            <a href="register.html">Register</a>
         </div>
         <div id="logout" style="display: none">
             <button id="logoutbutton">Logout</button>
@@ -69,7 +70,52 @@ and open the template in the editor.
 
         <script>
 
+            types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*/];
+
+            /**
+             * Clears all nodes below the selected (so that on subsequent expand they are loaded again).
+             * If parentnode is not given, the currently selected node is used.
+             * @returns {undefined}
+             */
+            function reloadSubtree(parentnode) {
+                console.log('parentnode:');
+                console.log(parentnode);
+                var tree = $('#treeview').jstree(true);
+                var node = parentnode === undefined ? tree.get_selected(true)[0] : parentnode;
+                tree.close_node(node);
+                tree.delete_node(node.children);
+                node.data.expanded = false;
+                if (types.length > node.data.type + 1) {
+                    tree.create_node(node, 'loading..');
+                }
+
+            }
+
             jQuery(document).ready(function() {
+
+                $(document).ajaxSend(function(event, jqXHR, ajaxOptions) {
+                    if (typeof loginsession !== 'undefined') {
+                        jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
+                        console.log('using login session:');
+                        console.log(loginsession);
+                    } else if (typeof currentuser !== 'undefined') {
+                        jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
+                    } else {
+                        console.log('no login information found.');
+                    }
+                });
+
+                $.ajaxPrefilter(function(options) {
+                    console.log('ajaxPrefilter');
+                    console.log(options);
+                    options.error = function(msg) {
+                        console.log('error on ajax call:');
+                        console.log(msg);
+                        $('#dialog-ajax-error-msg').text(msg['responseText']);
+                        $('#dialog-ajax-error').dialog('open');
+                    };
+
+                });
 
                 var logincookie = $.cookie('podio_backup_login_session');
                 if (typeof logincookie !== 'undefined') {
@@ -90,21 +136,14 @@ and open the template in the editor.
                     })
                 }
 
-                var types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*/];
-
                 var jstree = $('#treeview').jstree({
-                    'core': {
-                        "check_callback": true //allow manual node add/remove!
+                    core: {
+                        check_callback: true, //allow manual node add/remove!
+                        multiple: false
                     }
                 });
 
                 console.log('created tree: ' + jstree);
-
-                $('#treeview').on("changed.jstree", function(e, data) {
-                    console.log("changed.jstree");
-                    console.log(data.selected);
-                    console.log(e);
-                });
 
                 $('#treeview').on('select_node.jstree', function(e, data) {
                     console.log('select_node');
@@ -186,29 +225,6 @@ and open the template in the editor.
                     }
                 });
 
-                $(document).ajaxSend(function(event, jqXHR, ajaxOptions) {
-                    if (typeof loginsession !== 'undefined') {
-                        jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
-                        console.log('using login session:');
-                        console.log(loginsession);
-                    } else if (typeof currentuser !== 'undefined') {
-                        jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
-                    } else {
-                        console.log('no login information found.');
-                    }
-                });
-
-                $.ajaxPrefilter(function(options) {
-                    console.log('ajaxPrefilter');
-                    console.log(options);
-                    options.error = function(msg) {
-                        console.log('error on ajax call:');
-                        console.log(msg);
-                        $('#dialog-ajax-error-msg').text(msg['responseText']);
-                        $('#dialog-ajax-error').dialog('open');
-                    };
-
-                });
 
                 $('#treeview').on('open_node.jstree', function(e, data) {
                     console.log('opend node');
@@ -218,7 +234,6 @@ and open the template in the editor.
                         $.ajax({
                             url: data.node.data.url,
                             success: function(msg) {
-                                //todo remove loading..
                                 $('#treeview').jstree(true).delete_node(data.node.children[0]);
                                 data.node.data.expanded = true;
 
@@ -294,7 +309,7 @@ and open the template in the editor.
                         type: 'POST',
                         data: {action: 'doBackup'},
                         success: function(msg) {
-                            // TODO reload subtree
+                            reloadSubtree();
                             console.log('started backup:');
                             console.log(msg);
                             $('#run_backup_button').prop('disabled', true);
@@ -339,9 +354,6 @@ and open the template in the editor.
                     });
                 });
 
-                $('#treeview').on('create_node.jstree', function(e, data) {
-                    console.log('created node: ' + data.node.text);
-                });
 
                 var rootnode = $('#treeview').jstree(true).create_node('#', 'All visible Backups');
                 $('#treeview').jstree(true).get_node(rootnode).data = {
