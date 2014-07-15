@@ -48,6 +48,8 @@ and open the template in the editor.
                 </div>
                 <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection" style="display: none">
                     <h1>Backup</h1>
+                    <button id="run_backup_button" title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run Backup</button>
+                    <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
                 </div>
                 <div id="backupcontent-start" class="backupcontent backupcontent-start">
                     <h1>Welcome</h1>
@@ -108,12 +110,25 @@ and open the template in the editor.
                     console.log('select_node');
                     console.log(data);
                     $('.backupcontent').hide();
+                    currenturl = data.node.data.url;
+                    currententityurl = data.node.data.entityurl;
                     switch (data.node.data.type) {
                         case 0:
                             $('#backupcontent-start').show();
                             break;
                         case 1:
                             $('#backupcontent-backupcollection').show();
+                            console.log('querying information using url: ' + data.node.data.entityurl);
+                            $.ajax({
+                                url: data.node.data.entityurl,
+                                success: function(msg) {
+                                    $('#result').append(msg);
+                                    console.log('backup metadata:');
+                                    console.log(msg);
+                                    $('#run_backup_button').prop('disabled', msg['backupRunning']);
+                                }
+                            });
+
                             break;
                         case 2:
                             $('#backupcontent-backupiteration').show();
@@ -217,7 +232,8 @@ and open the template in the editor.
                                     $('#treeview').jstree(true).get_node(node).data = {
                                         expanded: false,
                                         type: data.node.data.type + 1,
-                                        url: data.node.data.url + '/' + msg[i].toString() + '/' + nexttype
+                                        url: data.node.data.url + '/' + msg[i].toString() + '/' + nexttype,
+                                        entityurl: data.node.data.url + '/' + msg[i].toString()
                                     };
                                     if (types.length > data.node.data.type + 1) {
                                         $('#treeview').jstree(true).create_node(node, 'loading..');
@@ -258,6 +274,33 @@ and open the template in the editor.
                             }
                         }
                     ]
+                });
+
+                $('#delete_backup_button').on('click', function(e, data) {
+                    $.ajax({
+                        url: currententityurl,
+                        type: 'DELETE',
+                        success: function(msg) {
+                            // TODO reload subtree
+                        }
+                    });
+                });
+
+                $('#run_backup_button').on('click', function(e, data) {
+                    console.log('starting backup - url:');
+                    console.log(currententityurl);
+                    $.ajax({
+                        url: currententityurl,
+                        type: 'POST',
+                        data: {action: 'doBackup'},
+                        success: function(msg) {
+                            // TODO reload subtree
+                            console.log('started backup:');
+                            console.log(msg);
+                            $('#run_backup_button').prop('disabled', true);
+                        }
+                    });
+
                 });
 
                 $('#logoutbutton').on('click', function(e, data) {

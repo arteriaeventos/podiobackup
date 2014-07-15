@@ -11,4 +11,6 @@ backup*
 bak*
 /nbproject/
 /*.out
+/*.log
 /rockmongo-1.1.7/
+/mycollection.log

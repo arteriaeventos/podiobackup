@@ -24,6 +24,12 @@ and open the template in the editor.
             <tr><td>password confirm</td><td style="overflow: hidden"><input type="password" id="password_confirm" style="float: left">
                     <span id="password_confirm_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert" style="float: left; display: none"></span>
                 </td></tr>
+            <tr><td>podio login</td><td style="overflow: hidden"><input type="text" id="podio_login" style="float: left">
+                    <span id="podio_login_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert" style="float: left; display: none"></span>
+                </td></tr>
+            <tr><td>podio password</td><td style="overflow: hidden"><input type="password" id="podio_password" style="float: left">
+                    <span id="podio_password_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert" style="float: left; display: none"></span>
+                </td></tr>
             <tr><td></td><td><input type="button" id="register_go" value="Register"></td></tr>
         </table>
 
@@ -92,7 +98,9 @@ and open the template in the editor.
                         type: 'POST',
                         data: {
                             user: btoa($('#email').val()),
-                            password: btoa($('#password').val())
+                            password: btoa($('#password').val()),
+                            podioUser: btoa($('#podioUser').val()),
+                            podioPassword: btoa($('#podioPassword').val())
                         },
                         error: function(msg) {
                             console.log('user create error');
