@@ -110,7 +110,7 @@ class Storage implements IStorage
                     array_push($dbfile->file['backupId'], $this->backupId);
                     $this->fs->save($dbfile->file);
                 }
-                return $dbfile->file['_id']{'$id'};
+                return $dbfile->file['_id']->{'$id'};
             } else {
                 try {
                     $fileId = $this->storeFile(
