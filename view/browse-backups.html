@@ -5,435 +5,466 @@ To change this template file, choose Tools | Templates
 and open the template in the editor.
 -->
 <html>
-    <head>
-        <title>Browse Backups</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width">
-        <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
-        <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
-        <link href="jqGrid/css/ui.jqgrid.css" rel="stylesheet">
-    </head>
-    <body>
+<head>
+    <title>Browse Backups</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+    <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
+    <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
+    <link href="jqGrid/css/ui.jqgrid.css" rel="stylesheet">
+</head>
+<body>
 
-        <div id="login">
-            <input id="username" type="text" /> 
-            <input id="password" type="password" /> 
-            <button id="loginbutton">Login</button> 
-            <a href="register.html">Register</a>
-        </div>
-        <div id="logout" style="display: none">
-            <button id="logoutbutton">Logout</button>
-        </div>
+<div id="login">
+    <input id="username" type="text"/>
+    <input id="password" type="password"/>
+    <button id="loginbutton">Login</button>
+    <a href="register.html">Register</a>
+</div>
+<div id="logout" style="display: none">
+    <button id="logoutbutton">Logout</button>
+</div>
 
-        <div id="dialog-ajax-error" title="Error">
-            <p>The following error occured:</p>
-            <pre id="dialog-ajax-error-msg"></pre>
-        </div>
+<div id="dialog-ajax-error" title="Error">
+    <p>The following error occured:</p>
+    <pre id="dialog-ajax-error-msg"></pre>
+</div>
 
-        <div style="overflow: hidden; padding: 20px">
-            <div id="treeview"  style="float: left"></div>
-            <div style="float: left; padding-left: 50px" id="currentcontent">
-                <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
-                    <h1>App</h1>
-                    <table id="content-app"></table>
-                    <div id="content-app-pager"></div> 
-                </div>
-                <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
-                    <h1>Organization</h1>
-                </div>
-                <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
-                    <h1>Space</h1>
-                </div>
-                <div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration" style="display: none">
-                    <h1>Backup Iteration</h1>
-                </div>
-                <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection" style="display: none">
-                    <h1>Backup Collection</h1>
-                    <div id="backup-collection-spaceid"></div>
-                    <button id="run_backup_button" title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run Backup Iteration</button>
-                    <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
-                    <h2>Files</h2>
-                    <div id="backup-collection-files"></div>
-                    <h2>All Files</h2>
-                    <div id="backup-collection-files-all"></div>
-                </div>
-                <div id="backupcontent-start" class="backupcontent backupcontent-start">
-                    <h1>Welcome</h1>
-                    <p>Browse backups in navigation.</p>
-                    <h2>Create new backup</h2>
-                    <div title="Create new backup">
-                        <table>
-                            <tr>
-                                <td>Name</td>
-                                <td><input id="create_backup_collection_name" type="text" title="Name"></td>
-                            </tr>
-                            <tr>
-                                <td>Podio Space ID (optional)</td>
-                                <td><input id="create_backup_collection_space_id" type="text" title="Podio Space ID (optional)"></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td><input type="button" value="Create" id="create_backup_collection_button" /></td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
+<div style="overflow: hidden; padding: 20px">
+    <div id="treeview" style="float: left"></div>
+    <div style="float: left; padding-left: 50px" id="currentcontent">
+        <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
+            <h1>App</h1>
+            <table id="content-app"></table>
+            <div id="content-app-pager"></div>
+            <h2>Files</h2>
+
+            <div id="backup-app-files"></div>
+            <h2>All Files</h2>
+
+            <div id="backup-app-files-all"></div>
+        </div>
+        <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
+            <h1>Organization</h1>
+        </div>
+        <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
+            <h1>Space</h1>
+        </div>
+        <div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration"
+             style="display: none">
+            <h1>Backup Iteration</h1>
+
+            <h2>Files</h2>
+
+            <div id="backup-iteration-files"></div>
+            <h2>All Files</h2>
+
+            <div id="backup-iteration-files-all"></div>
+        </div>
+        <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection"
+             style="display: none">
+            <h1>Backup Collection</h1>
+
+            <div id="backup-collection-spaceid"></div>
+            <button id="run_backup_button"
+                    title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run
+                Backup Iteration
+            </button>
+            <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
+            <h2>Files</h2>
+
+            <div id="backup-collection-files"></div>
+            <h2>All Files</h2>
+
+            <div id="backup-collection-files-all"></div>
+        </div>
+        <div id="backupcontent-start" class="backupcontent backupcontent-start">
+            <h1>Welcome</h1>
+
+            <p>Browse backups in navigation.</p>
+
+            <h2>Create new backup</h2>
+
+            <div title="Create new backup">
+                <table>
+                    <tr>
+                        <td>Name</td>
+                        <td><input id="create_backup_collection_name" type="text" title="Name"></td>
+                    </tr>
+                    <tr>
+                        <td>Podio Space ID (optional)</td>
+                        <td><input id="create_backup_collection_space_id" type="text" title="Podio Space ID (optional)">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><input type="button" value="Create" id="create_backup_collection_button"/></td>
+                    </tr>
+                </table>
             </div>
         </div>
-        <pre id="jsonoutput"></pre>
+    </div>
+</div>
+<pre id="jsonoutput"></pre>
 
-        <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
-        <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
-        <script src="jstree/dist/jstree.js"></script>
-        <script src="jquery.cookie-1.4.1.min.js"></script>
-        <script src="jqGrid/js/i18n/grid.locale-en.js"></script>
-        <script src="jqGrid/js/jquery.jqGrid.src.js"></script>
+<script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
+<script src="jquery-ui-1.11.0/jquery-ui.js"></script>
+<script src="jstree/dist/jstree.js"></script>
+<script src="jquery.cookie-1.4.1.min.js"></script>
+<script src="jqGrid/js/i18n/grid.locale-en.js"></script>
+<script src="jqGrid/js/jquery.jqGrid.src.js"></script>
 
-        <script>
+<script>
 
-            types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*/];
+types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*/];
 
-            /**
-             * Clears all nodes below the selected (so that on subsequent expand they are loaded again).
-             * If parentnode is not given, the currently selected node is used.
-             * @returns {undefined}
-             */
-            function reloadSubtree(parentnode) {
-                console.log('parentnode:');
-                console.log(parentnode);
-                var tree = $('#treeview').jstree(true);
-                var node = parentnode === undefined ? tree.get_selected(true)[0] : tree.get_node(parentnode);
-                tree.close_node(node);
-                tree.delete_node(node.children);
-                node.data.expanded = false;
-                if (types.length > node.data.type + 1) {
-                    tree.create_node(node, 'loading..');
-                }
-                if (parentnode !== undefined) {
-                    tree.select_node(node);
-                }
-
+/**
+ * filles domId with file information fetched from url
+ * @param domId e.g. '#backup-collection-files'
+ * @param url
+ */
+function loadFiles(domId, url) {
+    $(domId).text('');
+    console.log('query files: ' + url)
+    $.ajax({
+        url: url,
+        success: function (msg) {
+            console.log('fetched files (url:' + url + '): ');
+            console.log(msg);
+            for (i in msg) {
+                $(domId).append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
             }
+        }
+    });
+}
 
-            jQuery(document).ready(function() {
+/**
+ * Clears all nodes below the selected (so that on subsequent expand they are loaded again).
+ * If parentnode is not given, the currently selected node is used.
+ * @returns {undefined}
+ */
+function reloadSubtree(parentnode) {
+    console.log('parentnode:');
+    console.log(parentnode);
+    var tree = $('#treeview').jstree(true);
+    var node = parentnode === undefined ? tree.get_selected(true)[0] : tree.get_node(parentnode);
+    tree.close_node(node);
+    tree.delete_node(node.children);
+    node.data.expanded = false;
+    if (types.length > node.data.type + 1) {
+        tree.create_node(node, 'loading..');
+    }
+    if (parentnode !== undefined) {
+        tree.select_node(node);
+    }
 
-                $(document).ajaxSend(function(event, jqXHR, ajaxOptions) {
-                    if (typeof loginsession !== 'undefined') {
-                        jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
-                        console.log('using login session:');
-                        console.log(loginsession);
-                    } else if (typeof currentuser !== 'undefined') {
-                        jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
-                    } else {
-                        console.log('no login information found.');
-                    }
-                });
+}
 
-                $.ajaxPrefilter(function(options) {
-                    console.log('ajaxPrefilter');
-                    console.log(options);
-                    options.error = function(msg) {
-                        console.log('error on ajax call:');
+jQuery(document).ready(function () {
+
+    $(document).ajaxSend(function (event, jqXHR, ajaxOptions) {
+        if (typeof loginsession !== 'undefined') {
+            jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
+            console.log('using login session:');
+            console.log(loginsession);
+        } else if (typeof currentuser !== 'undefined') {
+            jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
+        } else {
+            console.log('no login information found.');
+        }
+    });
+
+    $.ajaxPrefilter(function (options) {
+        console.log('ajaxPrefilter');
+        console.log(options);
+        options.error = function (msg) {
+            console.log('error on ajax call:');
+            console.log(msg);
+            $('#dialog-ajax-error-msg').text(msg['responseText']);
+            $('#dialog-ajax-error').dialog('open');
+        };
+
+    });
+
+    var logincookie = $.cookie('podio_backup_login_session');
+    if (typeof logincookie !== 'undefined') {
+        loginsession = logincookie;
+        $('#login').hide();
+        $('#logout').hide();
+        $.ajax({
+            url: '../login',
+            success: function (msg) {
+                $('#logout').show();
+            },
+            error: function (msg) {
+                console.log('auto login error');
+                console.log(loginsession);
+                console.log(msg);
+                $('#login').show();
+            }
+        })
+    }
+
+    var jstree = $('#treeview').jstree({
+        core: {
+            check_callback: true, //allow manual node add/remove!
+            multiple: false
+        }
+    });
+
+    console.log('created tree: ' + jstree);
+
+    $('#treeview').on('select_node.jstree', function (e, data) {
+        console.log('select_node');
+        console.log(data);
+        $('.backupcontent').hide();
+        currenturl = data.node.data.url;
+        currententityurl = data.node.data.entityurl;
+        switch (data.node.data.type) {
+            case 0:
+                $('#backupcontent-start').show();
+                break;
+            case 1:
+                $('#backupcontent-backupcollection').show();
+                console.log('querying information using url: ' + data.node.data.entityurl);
+                $.ajax({
+                    url: data.node.data.entityurl,
+                    success: function (msg) {
+                        console.log('backup metadata:');
                         console.log(msg);
-                        $('#dialog-ajax-error-msg').text(msg['responseText']);
-                        $('#dialog-ajax-error').dialog('open');
-                    };
-
-                });
-
-                var logincookie = $.cookie('podio_backup_login_session');
-                if (typeof logincookie !== 'undefined') {
-                    loginsession = logincookie;
-                    $('#login').hide();
-                    $('#logout').hide();
-                    $.ajax({
-                        url: '../login',
-                        success: function(msg) {
-                            $('#logout').show();
-                        },
-                        error: function(msg) {
-                            console.log('auto login error');
-                            console.log(loginsession);
-                            console.log(msg);
-                            $('#login').show();
+                        $('#run_backup_button').prop('disabled', msg['backupRunning']);
+                        $('#backup-collection-spaceid').text('');
+                        if ('spaceId' in msg) {
+                            $('#backup-collection-spaceid').text('Podio SpaceID: ' + msg['spaceId']);
                         }
-                    })
-                }
 
-                var jstree = $('#treeview').jstree({
-                    core: {
-                        check_callback: true, //allow manual node add/remove!
-                        multiple: false
                     }
                 });
 
-                console.log('created tree: ' + jstree);
+                loadFiles('#backup-collection-files', data.node.data.entityurl + '/files');
+                loadFiles('#backup-collection-files-all', data.node.data.entityurl + '/files?all=true');
 
-                $('#treeview').on('select_node.jstree', function(e, data) {
-                    console.log('select_node');
-                    console.log(data);
-                    $('.backupcontent').hide();
-                    currenturl = data.node.data.url;
-                    currententityurl = data.node.data.entityurl;
-                    switch (data.node.data.type) {
-                        case 0:
-                            $('#backupcontent-start').show();
-                            break;
-                        case 1:
-                            $('#backupcontent-backupcollection').show();
-                            console.log('querying information using url: ' + data.node.data.entityurl);
-                            $.ajax({
-                                url: data.node.data.entityurl,
-                                success: function(msg) {
-                                    console.log('backup metadata:');
-                                    console.log(msg);
-                                    $('#run_backup_button').prop('disabled', msg['backupRunning']);
-                                    $('#backup-collection-spaceid').text('');
-                                    if ('spaceId' in msg) {
-                                        $('#backup-collection-spaceid').text('Podio SpaceID: ' + msg['spaceId']);
-                                    }
+                break;
+            case 2:
+                $('#backupcontent-backupiteration').show();
 
-                                }
+                loadFiles('#backup-iteration-files', data.node.data.entityurl + '/files');
+                loadFiles('#backup-iteration-files-all', data.node.data.entityurl + '/files?all=true');
+                break;
+            case 3:
+                $('#backupcontent-org').show();
+                break;
+            case 4:
+                $('#backupcontent-space').show();
+                break;
+            case 5:
+                $('#backupcontent-app').show();
+
+                loadFiles('#backup-app-files', data.node.data.entityurl + '/files');
+                loadFiles('#backup-app-files-all', data.node.data.entityurl + '/files?all=true');
+
+                $("#content-app").jqGrid({
+                    datatype: function (postdata) {
+                        console.log('loading grid:');
+                        console.log(postdata);
+                        var thegrid = $("#content-app")/*[0]*/;
+                        for (i = 0; i < 20; i++) {
+
+
+                            thegrid.addRowData("1" + i, {
+                                podioid: "my-podio-id-" + i,
+                                title: "my-title"
                             });
-                            $('#backup-collection-files').text('');
-                            console.log('query files: ' + data.node.data.entityurl + '/files')
-                            $.ajax({
-                                url: data.node.data.entityurl + '/files',
-                                success: function(msg) {
-                                    console.log('backup-collection-files:');
-                                    console.log(msg);
-                                    for (i in msg) {
-                                        $('#backup-collection-files').append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
-                                    }
-                                }
-                            });
-                            $.ajax({
-                                url: data.node.data.entityurl + '/files?all=true',
-                                success: function(msg) {
-                                    console.log('backup-collection-files-all:');
-                                    console.log(msg);
-                                    for (i in msg) {
-                                        $('#backup-collection-files-all').append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
-                                    }
-                                }
-                            });
-                            
-                            break;
-                        case 2:
-                            $('#backupcontent-backupiteration').show();
-                            break;
-                        case 3:
-                            $('#backupcontent-org').show();
-                            break;
-                        case 4:
-                            $('#backupcontent-space').show();
-                            break;
-                        case 5:
-                            $('#backupcontent-app').show();
-
-                            $("#content-app").jqGrid({
-                                datatype: function(postdata) {
-                                    console.log('loading grid:');
-                                    console.log(postdata);
-                                    var thegrid = $("#content-app")/*[0]*/;
-                                    for (i = 0; i < 20; i++) {
-
-
-                                        thegrid.addRowData("1" + i, {
-                                            podioid: "my-podio-id-" + i,
-                                            title: "my-title"
-                                        });
-                                    }
-                                    thegrid.setGridParam({lastpage: 40})/*.trigger("reloadGrid") CAUSES ENDLESS LOOP!*/;
-                                    console.log('using url: ' + data.node.data.url);
-                                    $.ajax({
-                                        url: data.node.data.url,
-                                        data: {start: 0, count: 10},
-                                        success: function(msg) {
-                                            //thegrid.addXmlData(xmldata.responseXML);
-                                            console.log('fetched table content');
-                                            console.log(msg);
-                                            $('#jsonoutput').text(msg);
-                                        }
-                                    });
-                                },
-                                colNames: ['Podio ID', 'Title'],
-                                colModel: [
-                                    {name: 'podioid', index: 'podioid'/*, width: 55*/},
-                                    {name: 'title', index: 'title'/*, width: 90*/},
-                                ],
-                                pager: '#content-app-pager',
-                                rowNum: 10,
-                                rowList: [10, 20, 30],
-                                viewrecords: true,
-                                caption: 'My first grid'
-                            });
-                            break;
-                        default :
-                            console.warn('unexpected type: ' + data.node.data.type)
-                            $('#backupcontent-start').show();
-                    }
-                });
-
-
-                $('#treeview').on('open_node.jstree', function(e, data) {
-                    console.log('opend node');
-                    console.log(data);
-                    if (data.node.data.expanded === false) {
-                        console.log('expanding new node..');
+                        }
+                        thegrid.setGridParam({lastpage: 40})/*.trigger("reloadGrid") CAUSES ENDLESS LOOP!*/;
+                        console.log('using url: ' + data.node.data.url);
                         $.ajax({
                             url: data.node.data.url,
-                            success: function(msg) {
-                                $('#treeview').jstree(true).delete_node(data.node.children[0]);
-                                data.node.data.expanded = true;
-
-                                var nexttype = types[data.node.data.type + 1];
-                                if (typeof nexttype === 'undefined') {
-                                    nexttype = 'item';
-                                }
-                                for (i in msg) {
-                                    var node = $('#treeview').jstree(true).create_node(data.node, msg[i]);
-                                    $('#treeview').jstree(true).get_node(node).data = {
-                                        expanded: false,
-                                        type: data.node.data.type + 1,
-                                        url: data.node.data.url + '/' + msg[i].toString() + '/' + nexttype,
-                                        entityurl: data.node.data.url + '/' + msg[i].toString()
-                                    };
-                                    if (types.length > data.node.data.type + 1) {
-                                        $('#treeview').jstree(true).create_node(node, 'loading..');
-                                    } else {
-                                        console.log('dont add loading child to last leaf..')
-                                        console.log(types);
-                                        console.log(types.length);
-                                        console.log(data.node.data.type);
-                                        console.log(data.node.data.type + 2);
-                                    }
-                                }
+                            data: {start: 0, count: 10},
+                            success: function (msg) {
+                                //thegrid.addXmlData(xmldata.responseXML);
+                                console.log('fetched table content');
+                                console.log(msg);
+                                $('#jsonoutput').text(msg);
                             }
-                        })
+                        });
+                    },
+                    colNames: ['Podio ID', 'Title'],
+                    colModel: [
+                        {name: 'podioid', index: 'podioid'/*, width: 55*/},
+                        {name: 'title', index: 'title'/*, width: 90*/},
+                    ],
+                    pager: '#content-app-pager',
+                    rowNum: 10,
+                    rowList: [10, 20, 30],
+                    viewrecords: true,
+                    caption: 'My first grid'
+                });
+                break;
+            default :
+                console.warn('unexpected type: ' + data.node.data.type)
+                $('#backupcontent-start').show();
+        }
+    });
+
+
+    $('#treeview').on('open_node.jstree', function (e, data) {
+        console.log('opend node');
+        console.log(data);
+        if (data.node.data.expanded === false) {
+            console.log('expanding new node..');
+            $.ajax({
+                url: data.node.data.url,
+                success: function (msg) {
+                    $('#treeview').jstree(true).delete_node(data.node.children[0]);
+                    data.node.data.expanded = true;
+
+                    var nexttype = types[data.node.data.type + 1];
+                    if (typeof nexttype === 'undefined') {
+                        nexttype = 'item';
                     }
-                });
-
-                $("#dialog-ajax-error").dialog({
-                    autoOpen: false,
-                    width: 400,
-                    buttons: [
-                        {
-                            text: "Ok",
-                            click: function() {
-                                $(this).dialog("close");
-                            }
+                    for (i in msg) {
+                        var node = $('#treeview').jstree(true).create_node(data.node, msg[i]);
+                        $('#treeview').jstree(true).get_node(node).data = {
+                            expanded: false,
+                            type: data.node.data.type + 1,
+                            url: data.node.data.url + '/' + msg[i].toString() + '/' + nexttype,
+                            entityurl: data.node.data.url + '/' + msg[i].toString()
+                        };
+                        if (types.length > data.node.data.type + 1) {
+                            $('#treeview').jstree(true).create_node(node, 'loading..');
+                        } else {
+                            console.log('dont add loading child to last leaf..')
+                            console.log(types);
+                            console.log(types.length);
+                            console.log(data.node.data.type);
+                            console.log(data.node.data.type + 2);
                         }
-                    ]
-                });
+                    }
+                }
+            })
+        }
+    });
 
-                $("#dialog-error").dialog({
-                    autoOpen: false,
-                    width: 400,
-                    buttons: [
-                        {
-                            text: "Ok",
-                            click: function() {
-                                $(this).dialog("close");
-                            }
-                        }
-                    ]
-                });
+    $("#dialog-ajax-error").dialog({
+        autoOpen: false,
+        width: 400,
+        buttons: [
+            {
+                text: "Ok",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
 
-                $('#delete_backup_button').on('click', function(e, data) {
-                    $.ajax({
-                        url: currententityurl,
-                        type: 'DELETE',
-                        success: function(msg) {
-                            var tree = $('#treeview').jstree(true);
-                            var selectedNode = tree.get_selected(true)[0];
-                            reloadSubtree(tree.get_parent(selectedNode));
-                        }
-                    });
-                });
+    $("#dialog-error").dialog({
+        autoOpen: false,
+        width: 400,
+        buttons: [
+            {
+                text: "Ok",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
 
-                $('#run_backup_button').on('click', function(e, data) {
-                    console.log('starting backup - url:');
-                    console.log(currententityurl);
-                    $.ajax({
-                        url: currententityurl,
-                        type: 'POST',
-                        data: {action: 'doBackup'},
-                        success: function(msg) {
-                            reloadSubtree();
-                            console.log('started backup:');
-                            console.log(msg);
-                            $('#run_backup_button').prop('disabled', true);
-                        }
-                    });
+    $('#delete_backup_button').on('click', function (e, data) {
+        $.ajax({
+            url: currententityurl,
+            type: 'DELETE',
+            success: function (msg) {
+                var tree = $('#treeview').jstree(true);
+                var selectedNode = tree.get_selected(true)[0];
+                reloadSubtree(tree.get_parent(selectedNode));
+            }
+        });
+    });
 
-                });
+    $('#run_backup_button').on('click', function (e, data) {
+        console.log('starting backup - url:');
+        console.log(currententityurl);
+        $.ajax({
+            url: currententityurl,
+            type: 'POST',
+            data: {action: 'doBackup'},
+            success: function (msg) {
+                reloadSubtree();
+                console.log('started backup:');
+                console.log(msg);
+                $('#run_backup_button').prop('disabled', true);
+            }
+        });
 
-                $('#create_backup_collection_button').on('click', function(e, data) {
-                    console.log('creating new backup.');
-                    var url = '../backupcollection/' + $('#create_backup_collection_name').val() + '?spaceId=' + $('#create_backup_collection_space_id').val();
-                    console.log('creating backup via url: ' + url);
-                    $.ajax({
-                        type: 'PUT',
-                        url: url,
-                        data: {spaceId: $('#create_backup_collection_space_id').val()},
-                        success: function(msg) {
-                            console.log('created new backup:');
-                            console.log(msg);
-                            reloadSubtree();
-                        }
-                    });
-                });
+    });
 
-                $('#logoutbutton').on('click', function(e, data) {
-                    $.ajax({
-                        url: '../logout',
-                        success: function(msg) {
-                            $('#login').show('slow');
-                            $('#logout').hide('slow');
-                            $.removeCookie('podio_backup_login_session', {path: '/'});
-                            location.reload();
-                        }
-                    });
-                });
+    $('#create_backup_collection_button').on('click', function (e, data) {
+        console.log('creating new backup.');
+        var url = '../backupcollection/' + $('#create_backup_collection_name').val() + '?spaceId=' + $('#create_backup_collection_space_id').val();
+        console.log('creating backup via url: ' + url);
+        $.ajax({
+            type: 'PUT',
+            url: url,
+            data: {spaceId: $('#create_backup_collection_space_id').val()},
+            success: function (msg) {
+                console.log('created new backup:');
+                console.log(msg);
+                reloadSubtree();
+            }
+        });
+    });
 
-                $('#loginbutton').on('click', function(e, data) {
-                    var user = $('#username').val();
-                    var password = $('#password').val();
-                    $.ajax({
-                        url: '../login',
-                        beforeSend: function(xhr) {
-                            xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(user + ':' + password));
-                        },
-                        success: function(msg) {
-                            $('#login').hide('slow');
-                            $('#logout').show('slow');
-                            console.log('login successfull');
-                            console.log(msg);
-                            currentuser = user;
-                            currentpassword = password;
-                            loginsession = msg['loginsession'];
-                            $.cookie('podio_backup_login_session', msg['loginsession'], {expires: 7, path: '/'});
-                            console.log('stored login session in cookie');
-                            console.log(msg['loginsession']);
-                        }
+    $('#logoutbutton').on('click', function (e, data) {
+        $.ajax({
+            url: '../logout',
+            success: function (msg) {
+                $('#login').show('slow');
+                $('#logout').hide('slow');
+                $.removeCookie('podio_backup_login_session', {path: '/'});
+                location.reload();
+            }
+        });
+    });
 
-                    });
-                });
+    $('#loginbutton').on('click', function (e, data) {
+        var user = $('#username').val();
+        var password = $('#password').val();
+        $.ajax({
+            url: '../login',
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Basic ' + window.btoa(user + ':' + password));
+            },
+            success: function (msg) {
+                $('#login').hide('slow');
+                $('#logout').show('slow');
+                console.log('login successfull');
+                console.log(msg);
+                currentuser = user;
+                currentpassword = password;
+                loginsession = msg['loginsession'];
+                $.cookie('podio_backup_login_session', msg['loginsession'], {expires: 7, path: '/'});
+                console.log('stored login session in cookie');
+                console.log(msg['loginsession']);
+            }
 
-
-                var rootnode = $('#treeview').jstree(true).create_node('#', 'All visible Backups');
-                $('#treeview').jstree(true).get_node(rootnode).data = {
-                    expanded: false,
-                    type: 0,
-                    url: '../' + types[0]
-                };
-                $('#treeview').jstree(true).create_node(rootnode, 'loading..');
-
-            });
+        });
+    });
 
 
+    var rootnode = $('#treeview').jstree(true).create_node('#', 'All visible Backups');
+    $('#treeview').jstree(true).get_node(rootnode).data = {
+        expanded: false,
+        type: 0,
+        url: '../' + types[0]
+    };
+    $('#treeview').jstree(true).create_node(rootnode, 'loading..');
 
-        </script>
-    </body>
+});
+
+
+</script>
+</body>
 </html>
