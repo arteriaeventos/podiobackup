@@ -132,9 +132,8 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
         return;
     }
 
-    //header('Content-type: ' . $file['mimeType']);
-    //header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
-    echo "pre file\n";
+    Flight::response()->header('Content-type', $file->file['mimeType']);
+    Flight::response()->header('Content-Disposition', $file->file['filename']);
 
     $bytes = $file->getBytes();
     error_log("file download - bytes: ".sizeof($bytes)."\n", 3, 'myphperror.log');
