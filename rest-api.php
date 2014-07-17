@@ -28,8 +28,8 @@ function getMongo() {
  * 
  * @return MongoDB DB containing all backups for the current user
  */
-function getDbForUser() {
-    $curr_user = getUser();
+function getDbForUser($useCookie = false) {
+    $curr_user = getUser($useCookie);
     return getMongo()->selectDB($curr_user['db']);
 }
 
@@ -42,19 +42,23 @@ function getUserCollection() {
 }
 
 /**
- * returns user or sends http error if user is not found/authorized
+ *  returns user or sends http error if user is not found/authorized
  * @global type $user
+ * @param type $useCookie use cookie auth (less secure - cross site scripting!)
  * @return array
  */
-function getUser() {
+function getUser($useCookie = false) {
     global $user;
 
     if (!isset($user)) {
         $headers = getallheaders();
-        error_log("\nheaders: " . var_export($headers) . "\n", 3, 'myphperror.log');
         $basic_auth_header = 'Authorization';
         $session_header = 'PhpBackupLoginSession';
-        if (array_key_exists($basic_auth_header, $headers) && isset($headers[$basic_auth_header]) && !is_null($headers[$basic_auth_header])) {
+        $cookie_name = 'podio_backup_login_session';
+        if ($useCookie && isset(Flight::request()->cookies[$cookie_name]) && !is_null(Flight::request()->cookies[$cookie_name])) {
+            $cookie_content = Flight::request()->cookies[$cookie_name];
+            $user = getUserCollection()->findOne(array('loginsession' => $cookie_content));
+        } elseif (array_key_exists($basic_auth_header, $headers) && isset($headers[$basic_auth_header]) && !is_null($headers[$basic_auth_header])) {
             $user_password_base64 = str_replace('Basic ', '', $headers[$basic_auth_header]);
             $user_password = base64_decode($user_password_base64);
 
@@ -64,17 +68,14 @@ function getUser() {
             error_log("looking up user: $username/$password\n", 3, 'myphperror.log');
 
             $user = getUserCollection()->findOne(array('user' => $username, 'password' => $password));
-            if (is_null($user)) {
-                Flight::halt(401, 'user/password not found.');
-            }
         } elseif (array_key_exists($session_header, $headers) && isset($headers[$session_header]) && !is_null($headers[$session_header])) {
             $session_header_content = $headers[$session_header];
             $user = getUserCollection()->findOne(array('loginsession' => $session_header_content));
-            if (is_null($user)) {
-                Flight::halt(401, 'session not found.');
-            }
         } else {
             Flight::halt(401, 'no credentials provided.');
+        }
+        if (is_null($user)) {
+            Flight::halt(401, 'session not found.');
         }
     }
     return $user;
@@ -97,7 +98,6 @@ function isBackupRunning($backupcollection) {
     $search = "--backupTo $backupcollection";
     $result = array();
     exec('ps auxwww', $result);
-    error_log("searching for '$search' in '$result'.", 3, 'myphperror.log');
     foreach ($result as $line) {
         if (strstr($line, $search)) {
             return true;
@@ -125,7 +125,7 @@ Flight::route('/logout', function() {
 });
 
 Flight::route('GET /file/@mongofileid', function($mongofileid) {
-    $file = getDbForUser()->getGridFS()->findOne(array('_id' => $mongofileid));
+    $file = getDbForUser(true)->getGridFS()->findOne(array('_id' => $mongofileid));
     if (is_null($file)) {
         Flight::halt(404, "File with id $mongofileid not found.");
         return;
@@ -277,7 +277,7 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
         'app' => $app,
         'podioItemId' => $item
     );
-    error_log("query_params: " . var_export($query_params, true), 3, 'myphperror.log');
+    error_log("query_params: " . var_export($query_params, true) . "\n", 3, 'myphperror.log');
 
     $query = array();
     foreach ($query_params as $key => $value) {
@@ -290,16 +290,18 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
         }
     }
 
-    error_log("query: " . var_export($query, true), 3, 'myphperror.log');
+    error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
 
     $files = getDbForUser()->getGridFS()->find($query);
     $result = array();
 
     foreach ($files as $file) {
+        error_log("file: " . var_export($file, true) . "\n", 3, 'myphperror.log');
         array_push($result, array('filename' => $file['filename'], 'id' => $file['_id']));
     }
 
-    error_log("files: " . var_export($files, true), 3, 'myphperror.log');
+    error_log("files: " . var_export($files, true) . "\n", 3, 'myphperror.log');
+    error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
 
     Flight::json($result);
 });
