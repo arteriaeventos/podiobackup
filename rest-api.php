@@ -264,6 +264,8 @@ Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiterat
 
 /* files */
 Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app(/item/@item)))))/files', function($backupcollection, $backupiteration, $org, $space, $app, $item) {
+    error_log("query: " . var_export(Flight::request()->query, true), 3, 'myphperror.log');
+
     $all = strcasecmp('true', Flight::request()->query['all']) == 0;
     error_log("all: $all", 3, 'myphperror.log');
     $query_params = array(
@@ -274,6 +276,8 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
         'app' => $app,
         'podioItemId' => $item
     );
+    error_log("query_params: " . var_export($query_params, true), 3, 'myphperror.log');
+
     $query = array();
     foreach ($query_params as $key => $value) {
         if (is_null($value)) {
@@ -284,12 +288,17 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
             $query[$key] = $value;
         }
     }
+    
+    error_log("query: " . var_export($query, true), 3, 'myphperror.log');
+    
     $files = getDbForUser()->getGridFS()->find($query);
     $result = array();
 
     foreach ($files as $file) {
         array_push($result, array('filename' => $file['filename'], 'id' => $file['_id']));
     }
+    
+    error_log("files: " . var_export($files, true), 3, 'myphperror.log');
 
     Flight::json($result);
 });

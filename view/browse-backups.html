@@ -49,6 +49,7 @@ and open the template in the editor.
                 </div>
                 <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection" style="display: none">
                     <h1>Backup Collection</h1>
+                    <div id="backup-collection-spaceid"></div>
                     <button id="run_backup_button" title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run Backup Iteration</button>
                     <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
                     <h2>Files</h2>
@@ -187,9 +188,15 @@ and open the template in the editor.
                                     console.log('backup metadata:');
                                     console.log(msg);
                                     $('#run_backup_button').prop('disabled', msg['backupRunning']);
+                                    $('#backup-collection-spaceid').text('');
+                                    if ('spaceId' in msg) {
+                                        $('#backup-collection-spaceid').text('Podio SpaceID: ' + msg['spaceId']);
+                                    }
+
                                 }
                             });
                             $('#backup-collection-files').text('');
+                            console.log('query files: ' + data.node.data.entityurl + '/files')
                             $.ajax({
                                 url: data.node.data.entityurl + '/files',
                                 success: function(msg) {
