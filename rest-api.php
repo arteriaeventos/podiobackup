@@ -132,6 +132,8 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
         return;
     }
 
+    error_log("headers sent: ".headers_sent()."\n", 3, 'myphperror.log');
+
     Flight::response()->header('Content-type', $file->file['mimeType']);
     Flight::response()->header('Content-Disposition', $file->file['filename']);
 
