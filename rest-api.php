@@ -125,7 +125,7 @@ Flight::route('/logout', function() {
 });
 
 Flight::route('GET /file/@mongofileid', function($mongofileid) {
-    $file = getDbForUser(true)->getGridFS()->findOne(array('_id' => $mongofileid));
+    $file = getDbForUser(true)->getGridFS()->findOne(array('_id' => new MongoId($mongofileid)));
     if (is_null($file)) {
         Flight::halt(404, "File with id $mongofileid not found.");
         return;
@@ -297,7 +297,7 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
 
     foreach ($files as $file) {
         error_log("file: " . var_export($file->file, true) . "\n", 3, 'myphperror.log');
-        array_push($result, array('filename' => $file->file['filename'], 'id' => $file->file['_id']->id));
+        array_push($result, array('filename' => $file->file['filename'], 'id' => $file->file['_id']->{'$id'}));
     }
 
     error_log("files: " . var_export($files, true) . "\n", 3, 'myphperror.log');
