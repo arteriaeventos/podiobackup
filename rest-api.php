@@ -27,6 +27,7 @@ function getMongo() {
 /**
  * 
  * @return MongoDB DB containing all backups for the current user
+ * @param $useCookie
  */
 function getDbForUser($useCookie = false) {
     $curr_user = getUser($useCookie);
@@ -44,7 +45,7 @@ function getUserCollection() {
 /**
  *  returns user or sends http error if user is not found/authorized
  * @global type $user
- * @param type $useCookie use cookie auth (less secure - cross site scripting!)
+ * @param boolean $useCookie use cookie auth (less secure - cross site scripting!)
  * @return array
  */
 function getUser($useCookie = false) {
@@ -134,7 +135,13 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
     header('Content-type: ' . $file['mimeType']);
     header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
 
-    echo $file->getBytes();
+    //echo $file->getBytes();
+
+    //alternative:
+     $stream = $file->getResource();
+      while (!feof($stream)) {
+      echo fread($stream, 8192);
+      }
 });
 
 Flight::route('POST /register', function() {
