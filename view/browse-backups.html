@@ -138,16 +138,26 @@ function loadFiles(domId, url) {
     });
 }
 
+function getSelectedNode(tree) {
+    var selectedNodes = tree.get_selected(true);
+    if (selectedNodes.length > 0) {
+        return selectedNodes[0];
+    } else {
+        tree.select_node('ul > li:first');
+        return tree.get_selected(true)[0];
+    }
+}
+
 /**
  * Clears all nodes below the selected (so that on subsequent expand they are loaded again).
- * If parentnode is not given, the currently selected node is used.
+ * If parentnode is not given, the currently selected node is used (if no node is selected the first root is chosen as parentnode).
  * @returns {undefined}
  */
 function reloadSubtree(parentnode) {
     console.log('parentnode:');
     console.log(parentnode);
     var tree = $('#treeview').jstree(true);
-    var node = parentnode === undefined ? tree.get_selected(true)[0] : tree.get_node(parentnode);
+    var node = parentnode === undefined ? getSelectedNode(tree) : tree.get_node(parentnode);
     tree.close_node(node);
     tree.delete_node(node.children);
     node.data.expanded = false;
