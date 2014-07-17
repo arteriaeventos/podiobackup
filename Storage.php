@@ -80,13 +80,13 @@ class Storage implements IStorage
         if (!is_null($podioFileId))
             $metadata['podioFileId'] = $podioFileId;
         if (!is_null($orgName))
-            $metadata['organization'] = $orgName;
+            $metadata['organization'] = array($orgName);
         if (!is_null($spaceName))
-            $metadata['space'] = $spaceName;
+            $metadata['space'] = array($spaceName);
         if (!is_null($appName))
-            $metadata['app'] = $appName;
+            $metadata['app'] = array($appName);
         if (!is_null($podioItemId))
-            $metadata['podioItemId'] = $podioItemId;
+            $metadata['podioItemId'] = array($podioItemId);
 
         /* type MongoId */
         $result = $this->fs->storeBytes($bytes, $metadata);
@@ -94,27 +94,47 @@ class Storage implements IStorage
         return $result->id;
     }
 
-    function storePodioFile(PodioFile $file)
+    function storePodioFile(PodioFile $file, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
         echo "storing file $file->name\n";
         #var_dump($file);
         $link = $file->link;
         if ($file->hosted_by == "podio") {
             echo "file hosted by podio\n";
-            $filename = fixDirName($file->name);
+            $filename = $file->name;
             $dbfile = $this->fs->findOne(array('podioFileId' => $file->file_id));
 
             if (!is_null($dbfile)) {
                 echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
-                if (!in_array($this->backupId, $dbfile->file['backupId'])) {
-                    array_push($dbfile->file['backupId'], $this->backupId);
+                $changed = false;
+                $attributes = array(
+                    'backupId' => $this->backupId,
+                    'organization' => $orgName,
+                    'space' => $spaceName,
+                    'app' => $appName,
+                    'podioItemId' => $podioItemId
+                );
+                foreach ($attributes as $key => $value) {
+                    if (!is_null($value)) {
+                        if (isset($dbfile->file[$key])) {
+                            if (!in_array($value, $dbfile->file[$key])) {
+                                array_push($dbfile->file[$key], $value);
+                                $changed = true;
+                            }
+                        } else {
+                            $dbfile->file[$key] = array($value);
+                            $changed = true;
+                        }
+                    }
+                }
+                if ($changed) {
                     $this->fs->save($dbfile->file);
                 }
                 return $dbfile->file['_id']->{'$id'};
             } else {
                 try {
                     $fileId = $this->storeFile(
-                        $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id);
+                        $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
                     RateLimitChecker::preventTimeOut();
                     return $fileId;
                 } catch (PodioBadRequestError $e) {
@@ -128,6 +148,7 @@ class Storage implements IStorage
         } else {
             echo "Not downloading file hosted by " . $file->hosted_by . "\n";
         }
+
         return $link;
     }
 

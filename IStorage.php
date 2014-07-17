@@ -7,7 +7,7 @@ interface IStorage {
      * @param PodioFile $file
      * @return type id/url
      */
-    function storePodioFile(PodioFile $file);
+    function storePodioFile(PodioFile $file, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
 
     function storeFile(
     $bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);

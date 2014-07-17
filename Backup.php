@@ -9,7 +9,8 @@ global $verbose;
  *
  * @author SCHRED
  */
-class Backup {
+class Backup
+{
 
     /**
      *
@@ -23,12 +24,14 @@ class Backup {
      */
     private $downloadFiles;
 
-    public function __construct(IStorage $storage, $downloadFiles) {
+    public function __construct(IStorage $storage, $downloadFiles)
+    {
         $this->storage = $storage;
         $this->downloadFiles = $downloadFiles;
     }
 
-    function backup_org(PodioOrganization $org) {
+    function backup_org(PodioOrganization $org)
+    {
         global $verbose;
 
         if ($verbose)
@@ -49,7 +52,8 @@ class Backup {
         }
     }
 
-    function backup_space(PodioSpace $space, PodioOrganization $org) {
+    function backup_space(PodioSpace $space, PodioOrganization $org)
+    {
         global $verbose;
         if ($verbose)
             echo "Space: " . $space->name . "\n";
@@ -68,6 +72,22 @@ class Backup {
         }
         $this->storage->store($contactsFile, 'podio_space_contacts.txt', $org->name, $space->name);
 
+        try {
+            $spaceFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_space', $space->space_id, array(), FILE_GET_FOR_APP_LIMIT);
+            echo "space files: " . sizeof($spaceFiles) . "\n";
+            #var_dump($appFiles);
+            PodioFetchAll::flattenObjectsArray($spaceFiles, PodioFetchAll::podioElements(
+                array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
+                    'context' => array('id' => NULL, 'type' => null, 'title' => null))));
+            if ($verbose)
+                echo "fetched information for " . sizeof($spaceFiles) . " files in space.\n";
+            foreach ($spaceFiles as $file) {
+                $this->storage->storePodioFile($file, $org->name, $space->name);
+            }
+        } catch (PodioError $e) {
+            show_error($e);
+        }
+
         $spaceApps = array();
         try {
             $spaceApps = PodioApp::get_for_space($space->space_id);
@@ -81,7 +101,8 @@ class Backup {
         }
     }
 
-    function backup_all() {
+    function backup_all()
+    {
         $podioOrgs = PodioOrganization::get_all();
 
         foreach ($podioOrgs as $org) { //org_id
@@ -91,11 +112,13 @@ class Backup {
 
     /**
      * Backups $app to a subfolder in $path
-     * 
-     * @param type $app app to backup
-     * @param type $path in this folder a subfolder for the app will be created
+     *
+     * @param PodioApp $app app to backup
+     * @param string $orgName
+     * @param string $spaceName
      */
-    function backup_app($app, $orgName, $spaceName) {
+    function backup_app(PodioApp $app, $orgName, $spaceName)
+    {
         $appName = $app->config['name'];
 
         global $verbose;
@@ -110,15 +133,15 @@ class Backup {
         $appFiles = array();
 
         $files_in_app_html = "<html><head><title>Files in app: " . $app->config['name'] . "</title></head><body>" .
-                "<table border=1><tr><th>name</th><th>link</th><th>context</th></tr>";
+            "<table border=1><tr><th>name</th><th>link</th><th>context</th></tr>";
         try {
             #$appFiles = PodioFile::get_for_app($app->app_id, array('attached_to' => 'item'));
             $appFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', $app->app_id, array(), FILE_GET_FOR_APP_LIMIT);
-            echo "app files: ".  sizeof($appFiles)."\n";
+            echo "app files: " . sizeof($appFiles) . "\n";
             #var_dump($appFiles);
             PodioFetchAll::flattenObjectsArray($appFiles, PodioFetchAll::podioElements(
-                            array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
-                                'context' => array('id' => NULL, 'type' => null, 'title' => null))));
+                array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
+                    'context' => array('id' => NULL, 'type' => null, 'title' => null))));
             if ($verbose)
                 echo "fetched information for " . sizeof($appFiles) . " files in app.\n";
         } catch (PodioError $e) {
@@ -132,11 +155,11 @@ class Backup {
 
             echo "app contains " . sizeof($allitems) . " items.\n";
 
-            for ($i = 0; $i < sizeof($allitems); $i+=ITEM_XLSX_LIMIT) {
+            for ($i = 0; $i < sizeof($allitems); $i += ITEM_XLSX_LIMIT) {
                 $itemFile = PodioItem::xlsx($app->app_id, array("limit" => ITEM_XLSX_LIMIT, "offset" => $i));
                 RateLimitChecker::preventTimeOut();
                 $this->storage->storeFile(
-                        $itemFile, $appName . '_' . $i . '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', NULL, NULL, $orgName, $spaceName, $appName);
+                    $itemFile, $appName . '_' . $i . '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', NULL, NULL, $orgName, $spaceName, $appName);
                 unset($itemFile);
             }
 
@@ -152,13 +175,13 @@ class Backup {
             if ($verbose)
                 echo "storing non item/comment files..\n";
             $app_files_folder = 'other_files';
-            
+
             $files_in_app_html .= "<tr><td><b>App Files</b></td><td><a href=$app_files_folder>" . $app_files_folder . "</a></td><td></td></tr>";
             foreach ($appFiles as $file) {
                 if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
                     echo "debug: downloading non item/comment file: $file->name\n";
                     if ($this->downloadFiles) {
-                        $link = $this->storage->storePodioFile($file);
+                        $link = $this->storage->storePodioFile($file, $orgName, $spaceName, $appName);
                     } else {
                         $link = $file->link;
                     }
@@ -176,7 +199,8 @@ class Backup {
         unset($files_in_app_html);
     }
 
-    function backup_item($item, $appFiles, &$appFile, $orgName, $spaceName, $appName) {
+    function backup_item($item, $appFiles, &$appFile, $orgName, $spaceName, $appName)
+    {
         global $verbose;
         if ($verbose)
             echo " - " . $item->title . "\n";
@@ -187,7 +211,7 @@ class Backup {
             foreach ($appFiles as $file) {
 
                 if ($file->context['type'] == 'item' && $file->context['id'] == $item->item_id) {
-                    $link = $this->storage->storePodioFile($file);
+                    $link = $this->storage->storePodioFile($file, $orgName, $spaceName, $appName, $item->item_id);
                     $itemFile .= "File: $link\n";
                     $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                 }

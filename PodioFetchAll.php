@@ -17,12 +17,12 @@ class PodioFetchAll {
      * $result = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', "YOUR_APP_ID", array('attached_to' => 'item'));
      * $result = PodioFetchAll::iterateApiCall('PodioItem::filter', "YOUR_APP_ID", array(), "items");
      * 
-     * @param type $function e.g. 'PodioFile::get_for_app'
+     * @param string $function e.g. 'PodioFile::get_for_app'
      * @param type $id first parameter of function
      * @param type $params
      * @param int $limit no of elements fetched on each call
      * @param String $resulttype if set, the result of the call is suspected to be in $result[$resulttype]
-     * @return type array of all fetched elements
+     * @return array array of all fetched elements
      */
     public static function iterateApiCall($function, $id, $params = array(), $limit = 100, $resulttype = null) {
         $completed = false;
