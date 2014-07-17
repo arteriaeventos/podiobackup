@@ -146,6 +146,7 @@ class Backup
                 echo "fetched information for " . sizeof($appFiles) . " files in app.\n";
         } catch (PodioError $e) {
             show_error($e);
+            //dummy
         }
 
 
