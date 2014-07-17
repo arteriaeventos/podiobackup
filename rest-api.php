@@ -132,7 +132,7 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
         return;
     }
 
-    error_log("headers sent: ".headers_sent()."\n", 3, 'myphperror.log');
+    error_log("headers sent: ".var_export(headers_sent(), true)."\n", 3, 'myphperror.log');
 
     Flight::response()->header('Content-type', $file->file['mimeType']);
     Flight::response()->header('Content-Disposition', $file->file['filename']);
@@ -140,7 +140,7 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
     $bytes = $file->getBytes();
     error_log("file download - bytes: ".sizeof($bytes)."\n", 3, 'myphperror.log');
     echo $bytes;
-    flush();
+    //flush();//remove?s
 
     //alternative:
 //     $stream = $file->getResource();
