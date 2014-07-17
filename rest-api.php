@@ -3,11 +3,12 @@
 require 'flight/flight/Flight.php';
 
 /**
- * 
+ *
  * @global MongoClient $mongo
  * @return \MongoClient
  */
-function getMongo() {
+function getMongo()
+{
     global $mongo;
     if (!isset($mongo) || is_null($mongo)) {
         $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
@@ -25,11 +26,12 @@ function getMongo() {
 }
 
 /**
- * 
+ *
  * @return MongoDB DB containing all backups for the current user
  * @param $useCookie
  */
-function getDbForUser($useCookie = false) {
+function getDbForUser($useCookie = false)
+{
     $curr_user = getUser($useCookie);
     return getMongo()->selectDB($curr_user['db']);
 }
@@ -38,7 +40,8 @@ function getDbForUser($useCookie = false) {
  * Collection containing all registered users
  * @return MongoCollection
  */
-function getUserCollection() {
+function getUserCollection()
+{
     return getMongo()->selectDB('application')->selectCollection('users');
 }
 
@@ -48,7 +51,8 @@ function getUserCollection() {
  * @param boolean $useCookie use cookie auth (less secure - cross site scripting!)
  * @return array
  */
-function getUser($useCookie = false) {
+function getUser($useCookie = false)
+{
     global $user;
 
     if (!isset($user)) {
@@ -85,16 +89,19 @@ function getUser($useCookie = false) {
 /**
  * Checks if user is authorized (http basic auth or session header)
  */
-function checkLogin() {
+function checkLogin()
+{
     getUser();
 }
 
-function createUserDbName($user) {
+function createUserDbName($user)
+{
     //TODO assure uniqueness!
     return str_replace(array('@', '.'), '-', $user);
 }
 
-function isBackupRunning($backupcollection) {
+function isBackupRunning($backupcollection)
+{
     /* TODO account for other OS */
     $search = "--backupTo $backupcollection";
     $result = array();
@@ -109,7 +116,7 @@ function isBackupRunning($backupcollection) {
 
 Flight::set('flight.log_errors', true);
 
-Flight::route('/login', function() {
+Flight::route('/login', function () {
     $curr_user = getUser();
     if (!isset($curr_user['loginsession'])) {
         $curr_user['loginsession'] = md5($curr_user['user'] . time());
@@ -118,39 +125,32 @@ Flight::route('/login', function() {
     Flight::json(array('loginsession' => $curr_user['loginsession']));
 });
 
-Flight::route('/logout', function() {
+Flight::route('/logout', function () {
     $curr_user = getUser();
     unset($curr_user['loginsession']);
     getUserCollection()->save($curr_user);
     Flight::halt(204);
 });
 
-Flight::route('GET /file/@mongofileid', function($mongofileid) {
+Flight::route('GET /file/@mongofileid', function ($mongofileid) {
     $file = getDbForUser(true)->getGridFS()->findOne(array('_id' => new MongoId($mongofileid)));
     if (is_null($file)) {
         Flight::halt(404, "File with id $mongofileid not found.");
         return;
     }
 
-    error_log("headers sent: ".var_export(headers_sent(), true)."\n", 3, 'myphperror.log');
-
     Flight::response()->header('Content-type', $file->file['mimeType']);
     Flight::response()->header('Content-Disposition', $file->file['filename']);
 
     $bytes = $file->getBytes();
-    error_log("file download - bytes: ".sizeof($bytes)."\n", 3, 'myphperror.log');
+    error_log("file download - bytes: " . strlen($bytes) . "\n", 3, 'myphperror.log');
     echo $bytes;
-    //flush();//remove?s
+    /* IMPORTANT: do not flush() as this prevents custom headers to be sent! */
 
-    //alternative:
-//     $stream = $file->getResource();
-//      while (!feof($stream)) {
-//      echo fread($stream, 8192);
-//      }
     Flight::stop();
 });
 
-Flight::route('POST /register', function() {
+Flight::route('POST /register', function () {
     /* maybe use PUT + POST? */
     $user = base64_decode(Flight::request()->data['user']);
     $password = base64_decode(Flight::request()->data['password']);
@@ -175,16 +175,16 @@ Flight::route('POST /register', function() {
 });
 
 
-Flight::route('/backupcollection/count', function() {
+Flight::route('/backupcollection/count', function () {
     Flight::json(sizeof(getDbForUser()->getCollectionNames()));
 });
 
-Flight::route('/backupcollection/@backupcollection/backupiteration/count', function($backupcollection) {
+Flight::route('/backupcollection/@backupcollection/backupiteration/count', function ($backupcollection) {
     $collection = getDbForUser()->selectCollection($backupcollection);
     Flight::json(sizeof($collection->distinct('backupId')));
 });
 
-Flight::route('PUT /backupcollection/@backupcollection', function($backupcollection) {
+Flight::route('PUT /backupcollection/@backupcollection', function ($backupcollection) {
     if (in_array($backupcollection, getDbForUser()->getCollectionNames())) {
         Flight::halt(409, "backup with given name exists ($backupcollection).");
     } else {
@@ -201,7 +201,7 @@ Flight::route('PUT /backupcollection/@backupcollection', function($backupcollect
     }
 });
 
-Flight::route('DELETE /backupcollection/@backupcollection', function($backupcollection) {
+Flight::route('DELETE /backupcollection/@backupcollection', function ($backupcollection) {
     if (!in_array($backupcollection, getDbForUser()->getCollectionNames())) {
         Flight::halt(404, "backup with given name not found ($backupcollection).");
     } else {
@@ -210,7 +210,7 @@ Flight::route('DELETE /backupcollection/@backupcollection', function($backupcoll
     }
 });
 
-Flight::route('GET /backupcollection/@backupcollection', function($backupcollection) {
+Flight::route('GET /backupcollection/@backupcollection', function ($backupcollection) {
     if (!in_array($backupcollection, getDbForUser()->getCollectionNames())) {
         Flight::halt(404, "backup with given name not found ($backupcollection).");
     } else {
@@ -227,7 +227,7 @@ Flight::route('GET /backupcollection/@backupcollection', function($backupcollect
 });
 
 
-Flight::route('POST /backupcollection/@backupcollection', function($backupcollection) {
+Flight::route('POST /backupcollection/@backupcollection', function ($backupcollection) {
     if (!in_array($backupcollection, getDbForUser()->getCollectionNames())) {
         Flight::halt(404, "backup with given name not found ($backupcollection).");
     } else {
@@ -242,16 +242,16 @@ Flight::route('POST /backupcollection/@backupcollection', function($backupcollec
             $backupMetadata = $collection->findOne(array('description' => 'backup metadata'));
             $user = getUser();
             $command = "php podio_backup_full_cli.php"
-                    . " -f"
-                    . " --db " . $user['db']
-                    . " --backupTo $backupcollection"
-                    . " --podioClientId podio-backup14"
-                    . " --podioClientSecret lL7Rj2tOT1u59IqojbVN2lVl0sWIjmpwLQoBGbpflw5fnasmKgusrFwr82HX5USq"
-                    . " --podioUser " . $user['podioUser']
-                    . " --podioPassword " . $user['podioPassword']
-                    . (isset($backupMetadata['spaceId']) ? " --podioSpace " . $backupMetadata['spaceId'] : "")
-                    . " > $backupcollection.log"
-                    . " &";
+                . " -f"
+                . " --db " . $user['db']
+                . " --backupTo $backupcollection"
+                . " --podioClientId podio-backup14"
+                . " --podioClientSecret lL7Rj2tOT1u59IqojbVN2lVl0sWIjmpwLQoBGbpflw5fnasmKgusrFwr82HX5USq"
+                . " --podioUser " . $user['podioUser']
+                . " --podioPassword " . $user['podioPassword']
+                . (isset($backupMetadata['spaceId']) ? " --podioSpace " . $backupMetadata['spaceId'] : "")
+                . " > $backupcollection.log"
+                . " &";
             error_log("executing command: $command", 3, 'myphperror.log');
             $result = exec($command);
             Flight::halt(202, "job id: $result");
@@ -261,7 +261,7 @@ Flight::route('POST /backupcollection/@backupcollection', function($backupcollec
     }
 });
 
-Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/app/@app/item/count', function($backupcollection, $backupiteration, $org, $space, $app) {
+Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/app/@app/item/count', function ($backupcollection, $backupiteration, $org, $space, $app) {
     $query = array(
         'description' => 'original item',
         'backupId' => $backupiteration,
@@ -276,7 +276,7 @@ Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiterat
 });
 
 /* files */
-Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app(/item/@item)))))/files', function($backupcollection, $backupiteration, $org, $space, $app, $item) {
+Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app(/item/@item)))))/files', function ($backupcollection, $backupiteration, $org, $space, $app, $item) {
     error_log("query: " . var_export(Flight::request()->query, true), 3, 'myphperror.log');
 
     $all = strcasecmp('true', Flight::request()->query['all']) == 0;
@@ -320,13 +320,13 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
 
 
 /* browsing */
-Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiteration/org(/@org/space(/@space/app(/@app/item(/@item))))))', function($backupcollection, $backupiteration, $org, $space, $app, $item) {
+Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiteration/org(/@org/space(/@space/app(/@app/item(/@item))))))', function ($backupcollection, $backupiteration, $org, $space, $app, $item) {
 
     if (is_null($backupcollection)) {
         $allCollections = getDbForUser()->getCollectionNames();
         Flight::json(array_filter($allCollections, function ($var) {
-                    return $var != 'system.indexes' && $var != 'fs.files' && $var != 'fs.chunks';
-                }));
+            return $var != 'system.indexes' && $var != 'fs.files' && $var != 'fs.chunks';
+        }));
     } else if (is_null($backupiteration)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
         $backups = $collection->distinct('backupId');

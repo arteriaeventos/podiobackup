@@ -21,15 +21,6 @@ class Storage implements IStorage {
     private $collection;
     private $fs;
     private $backupId;
-    private $filestoreId;
-
-    /**
-     * Stores fileid->mongo_id to backupTo-folder.
-     * Currently this is loaded in the beginning and saved in the destructor. 
-     * If performance is not an issue one could implement: load on every call to assure files from interrupted runs are preserved.
-     * @var array 
-     */
-    private $filestore;
 
     function __construct($dbname, $collection, $backupId) {
         $this->db = Storage::getMongo()->selectDB($dbname);
@@ -39,24 +30,6 @@ class Storage implements IStorage {
         $this->fs = $this->db->getGridFS();
         $this->collection = $this->db->selectCollection($this->collectionname);
         $this->backupId = $backupId;
-
-        $filestoreDoc = $this->collection->findOne(array("description" => "filestore"));
-        if (is_null($filestoreDoc)) {
-            $newFileStore = array();
-            $this->store($newFileStore, 'filestore');
-            echo "created filestore\n";
-            $filestoreDoc = $this->collection->findOne(array("description" => "filestore"));
-        }
-        $this->filestoreId = $filestoreDoc['_id'];
-        $this->filestore = unserialize($filestoreDoc['value']);
-    }
-
-    public function __destruct() {
-        $this->collection->save(array(
-            '_id' => $this->filestoreId,
-            'value' => serialize($this->filestore),
-            'description' => 'filestore'));
-        echo "saved filestore to db. (id: $this->filestoreId)\n";
     }
 
     /**
@@ -94,7 +67,7 @@ class Storage implements IStorage {
         $metadata = array(
             'filename' => $filename,
             'backupcollection' => $this->collectionname,
-            'backupId' => $this->backupId,
+            'backupId' => array($this->backupId),
             'mimeType' => $mimeType);
 
         if (!is_null($originalUrl))
@@ -123,15 +96,20 @@ class Storage implements IStorage {
         if ($file->hosted_by == "podio") {
             echo "file hosted by podio\n";
             $filename = fixDirName($file->name);
-            if (array_key_exists($file->file_id, $this->filestore)) {
+            $dbfile = $this->fs->findOne(array('podioItemId'=>$file->file_id));
+
+            if (!is_null($dbfile)) {
                 echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
-                return $this->filestore[$file->file_id];
+                if(!in_array($this->backupId, $dbfile->file['backupId'])) {
+                    array_push($dbfile->file['backupId'], $this->backupId);
+                    $this->fs->save($dbfile->file);
+                }
+                return $dbfile->file['_id']{'$id'};
             } else {
                 try {
                     $fileId = $this->storeFile(
                             $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id);
                     RateLimitChecker::preventTimeOut();
-                    $this->filestore[$file->file_id] = $fileId;
                     return $fileId;
                 } catch (PodioBadRequestError $e) {
                     echo $e->body;   # Parsed JSON response from the API
