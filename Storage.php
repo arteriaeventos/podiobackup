@@ -14,7 +14,8 @@ require_once 'IStorage.php';
  *
  * @author SCHRED
  */
-class Storage implements IStorage {
+class Storage implements IStorage
+{
 
     private $db;
     private $collectionname = 'mytestcollection';
@@ -22,7 +23,8 @@ class Storage implements IStorage {
     private $fs;
     private $backupId;
 
-    function __construct($dbname, $collection, $backupId) {
+    function __construct($dbname, $collection, $backupId)
+    {
         $this->db = Storage::getMongo()->selectDB($dbname);
         if (isset($collection)) {
             $this->collectionname = $collection;
@@ -33,11 +35,12 @@ class Storage implements IStorage {
     }
 
     /**
-     * 
+     *
      * @global type $mongo
      * @return \MongoClient
      */
-    public static function getMongo() {
+    public static function getMongo()
+    {
         global $mongo;
         if (!isset($mongo) || is_null($mongo)) {
             $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
@@ -55,15 +58,17 @@ class Storage implements IStorage {
     }
 
     /**
-     * 
+     *
      * @return MongoDB
      */
-    public static function getMongoDb() {
+    public static function getMongoDb()
+    {
         $dbname = 'php';
         return getMongo()->selectDB($dbname);
     }
 
-    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
+    function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
+    {
         $metadata = array(
             'filename' => $filename,
             'backupcollection' => $this->collectionname,
@@ -89,18 +94,19 @@ class Storage implements IStorage {
         return $result->id;
     }
 
-    function storePodioFile(PodioFile $file) {
+    function storePodioFile(PodioFile $file)
+    {
         echo "storing file $file->name\n";
         #var_dump($file);
         $link = $file->link;
         if ($file->hosted_by == "podio") {
             echo "file hosted by podio\n";
             $filename = fixDirName($file->name);
-            $dbfile = $this->fs->findOne(array('file.podioItemId'=>$file->file_id));
+            $dbfile = $this->fs->findOne(array('podioFileId' => $file->file_id));
 
             if (!is_null($dbfile)) {
                 echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
-                if(!in_array($this->backupId, $dbfile->file['backupId'])) {
+                if (!in_array($this->backupId, $dbfile->file['backupId'])) {
                     array_push($dbfile->file['backupId'], $this->backupId);
                     $this->fs->save($dbfile->file);
                 }
@@ -108,13 +114,13 @@ class Storage implements IStorage {
             } else {
                 try {
                     $fileId = $this->storeFile(
-                            $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id);
+                        $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id);
                     RateLimitChecker::preventTimeOut();
                     return $fileId;
                 } catch (PodioBadRequestError $e) {
-                    echo $e->body;   # Parsed JSON response from the API
+                    echo $e->body; # Parsed JSON response from the API
                     echo $e->status; # Status code of the response
-                    echo $e->url;    # URI of the API request
+                    echo $e->url; # URI of the API request
                     // You normally want this one, a human readable error description
                     echo $e->body['error_description'];
                 }
@@ -125,7 +131,8 @@ class Storage implements IStorage {
         return $link;
     }
 
-    function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
+    function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
+    {
 
         $item = array('backupId' => $this->backupId, 'value' => ((!is_string($value) && is_object($value)) ? serialize($value) : $value));
 
