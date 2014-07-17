@@ -123,6 +123,20 @@ Flight::route('/logout', function() {
     Flight::halt(204);
 });
 
+Flight::route('GET /file/@mongofileid', function($mongofileid) {
+    $file = getDbForUser()->getGridFS()->findOne(array('_id' => $mongofileid));
+    if (is_null($file)) {
+        Flight::halt(404, "File with id $mongofileid not found.");
+        return;
+    }
+
+    header('Content-type: ' . $file['mimeType']);
+    header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
+
+    readfile('original.pdf');
+    echo $file->getBytes();
+});
+
 Flight::route('POST /register', function() {
     /* maybe use PUT + POST? */
     $user = base64_decode(Flight::request()->data['user']);
@@ -248,10 +262,41 @@ Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiterat
     Flight::json(sizeof($items));
 });
 
+/* files */
+Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app(/item/@item)))))/files', function($backupcollection, $backupiteration, $org, $space, $app, $item) {
+    $all = strcasecmp('true', Flight::request()->query['all']) == 0;
+    error_log("all: $all", 3, 'myphperror.log');
+    $query_params = array(
+        'backupcollection' => $backupcollection,
+        'backupId' => $backupiteration,
+        'organization' => $org,
+        'space' => $space,
+        'app' => $app,
+        'podioItemId' => $item
+    );
+    $query = array();
+    foreach ($query_params as $key => $value) {
+        if (is_null($value)) {
+            if (!$all) {
+                $query[$key] = null;
+            }
+        } else {
+            $query[$key] = $value;
+        }
+    }
+    $files = getDbForUser()->getGridFS()->find($query);
+    $result = array();
+
+    foreach ($files as $file) {
+        array_push($result, array('filename' => $file['filename'], 'id' => $file['_id']));
+    }
+
+    Flight::json($result);
+});
+
+
 /* browsing */
 Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiteration/org(/@org/space(/@space/app(/@app/item(/@item))))))', function($backupcollection, $backupiteration, $org, $space, $app, $item) {
-
-    checkLogin();
 
     if (is_null($backupcollection)) {
         $allCollections = getDbForUser()->getCollectionNames();

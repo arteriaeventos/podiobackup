@@ -93,6 +93,7 @@ class Storage implements IStorage {
     function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL) {
         $metadata = array(
             'filename' => $filename,
+            'backupcollection' => $this->collectionname,
             'backupId' => $this->backupId,
             'mimeType' => $mimeType);
 

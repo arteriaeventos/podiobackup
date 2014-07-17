@@ -48,9 +48,13 @@ and open the template in the editor.
                     <h1>Backup Iteration</h1>
                 </div>
                 <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection" style="display: none">
-                    <h1>Backup</h1>
-                    <button id="run_backup_button" title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run Backup</button>
+                    <h1>Backup Collection</h1>
+                    <button id="run_backup_button" title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run Backup Iteration</button>
                     <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
+                    <h2>Files</h2>
+                    <div id="backup-collection-files"></div>
+                    <h2>All Files</h2>
+                    <div id="backup-collection-files-all"></div>
                 </div>
                 <div id="backupcontent-start" class="backupcontent backupcontent-start">
                     <h1>Welcome</h1>
@@ -75,7 +79,6 @@ and open the template in the editor.
                 </div>
             </div>
         </div>
-        <div id="results"><b>Results</b><br></div>
         <pre id="jsonoutput"></pre>
 
         <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
@@ -181,13 +184,22 @@ and open the template in the editor.
                             $.ajax({
                                 url: data.node.data.entityurl,
                                 success: function(msg) {
-                                    $('#result').append(msg);
                                     console.log('backup metadata:');
                                     console.log(msg);
                                     $('#run_backup_button').prop('disabled', msg['backupRunning']);
                                 }
                             });
-
+                            $('#backup-collection-files').text('');
+                            $.ajax({
+                                url: data.node.data.entityurl + '/files',
+                                success: function(msg) {
+                                    console.log('backup-collection-files:');
+                                    console.log(msg);
+                                    for (i in msg) {
+                                        $('#backup-collection-files').append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
+                                    }
+                                }
+                            });
                             break;
                         case 2:
                             $('#backupcontent-backupiteration').show();
@@ -262,7 +274,6 @@ and open the template in the editor.
                                     nexttype = 'item';
                                 }
                                 for (i in msg) {
-                                    $("#results").append("item: " + msg[i].toString() + "<br>");
                                     var node = $('#treeview').jstree(true).create_node(data.node, msg[i]);
                                     $('#treeview').jstree(true).get_node(node).data = {
                                         expanded: false,
