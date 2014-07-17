@@ -218,7 +218,7 @@ Flight::route('POST /backupcollection/@backupcollection', function($backupcollec
                     . " -f"
                     . " --db " . $user['db']
                     . " --backupTo $backupcollection"
-                    . " --podioClientId podioBackup14"
+                    . " --podioClientId podio-backup14"
                     . " --podioClientSecret lL7Rj2tOT1u59IqojbVN2lVl0sWIjmpwLQoBGbpflw5fnasmKgusrFwr82HX5USq"
                     . " --podioUser " . $user['podioUser']
                     . " --podioPassword " . $user['podioPassword']

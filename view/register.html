@@ -114,8 +114,8 @@ and open the template in the editor.
                         data: {
                             user: btoa($('#email').val()),
                             password: btoa($('#password').val()),
-                            podioUser: btoa($('#podioUser').val()),
-                            podioPassword: btoa($('#podioPassword').val())
+                            podioUser: btoa($('#podio_login').val()),
+                            podioPassword: btoa($('#podio_password').val())
                         },
                         error: function(msg) {
                             console.log('user create error');
