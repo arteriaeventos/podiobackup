@@ -135,13 +135,16 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
     header('Content-type: ' . $file['mimeType']);
     header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
 
-    //echo $file->getBytes();
+    $bytes = $file->getBytes();
+    error_log("file download - bytes: ".sizeof($bytes)."\n", 3, 'myphperror.log');
+    echo $bytes;
+    flush();
 
     //alternative:
-     $stream = $file->getResource();
-      while (!feof($stream)) {
-      echo fread($stream, 8192);
-      }
+//     $stream = $file->getResource();
+//      while (!feof($stream)) {
+//      echo fread($stream, 8192);
+//      }
     Flight::stop();
 });
 
