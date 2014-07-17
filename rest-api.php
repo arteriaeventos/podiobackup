@@ -142,6 +142,7 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
       while (!feof($stream)) {
       echo fread($stream, 8192);
       }
+    Flight::stop();
 });
 
 Flight::route('POST /register', function() {
