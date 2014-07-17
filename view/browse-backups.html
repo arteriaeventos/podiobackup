@@ -207,6 +207,17 @@ and open the template in the editor.
                                     }
                                 }
                             });
+                            $.ajax({
+                                url: data.node.data.entityurl + '/files?all=true',
+                                success: function(msg) {
+                                    console.log('backup-collection-files-all:');
+                                    console.log(msg);
+                                    for (i in msg) {
+                                        $('#backup-collection-files-all').append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
+                                    }
+                                }
+                            });
+                            
                             break;
                         case 2:
                             $('#backupcontent-backupiteration').show();

@@ -97,8 +97,9 @@ function isBackupRunning($backupcollection) {
     $search = "--backupTo $backupcollection";
     $result = array();
     exec('ps auxwww', $result);
+    error_log("searching for '$search' in '$result'.", 3, 'myphperror.log');
     foreach ($result as $line) {
-        if (strstr($result, $search)) {
+        if (strstr($line, $search)) {
             return true;
         }
     }
@@ -288,16 +289,16 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
             $query[$key] = $value;
         }
     }
-    
+
     error_log("query: " . var_export($query, true), 3, 'myphperror.log');
-    
+
     $files = getDbForUser()->getGridFS()->find($query);
     $result = array();
 
     foreach ($files as $file) {
         array_push($result, array('filename' => $file['filename'], 'id' => $file['_id']));
     }
-    
+
     error_log("files: " . var_export($files, true), 3, 'myphperror.log');
 
     Flight::json($result);
@@ -310,7 +311,7 @@ Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiter
     if (is_null($backupcollection)) {
         $allCollections = getDbForUser()->getCollectionNames();
         Flight::json(array_filter($allCollections, function ($var) {
-                    return $var != 'system.indexes';
+                    return $var != 'system.indexes' && $var != 'fs.files' && $var != 'fs.chunks';
                 }));
     } else if (is_null($backupiteration)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
