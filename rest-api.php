@@ -132,8 +132,9 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
         return;
     }
 
-    header('Content-type: ' . $file['mimeType']);
-    header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
+    //header('Content-type: ' . $file['mimeType']);
+    //header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
+    echo "pre file\n";
 
     $bytes = $file->getBytes();
     error_log("file download - bytes: ".sizeof($bytes)."\n", 3, 'myphperror.log');
@@ -374,7 +375,6 @@ Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiter
         Flight::json($result);
     }
 });
-
 
 Flight::start();
 ?>
