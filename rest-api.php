@@ -297,7 +297,7 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
 
     foreach ($files as $file) {
         error_log("file: " . var_export($file->file, true) . "\n", 3, 'myphperror.log');
-        array_push($result, array('filename' => $file->file['filename'], 'id' => $file->file['_id']));
+        array_push($result, array('filename' => $file->file['filename'], 'id' => $file->file['_id']->id));
     }
 
     error_log("files: " . var_export($files, true) . "\n", 3, 'myphperror.log');
