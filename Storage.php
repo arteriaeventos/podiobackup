@@ -96,7 +96,7 @@ class Storage implements IStorage {
         if ($file->hosted_by == "podio") {
             echo "file hosted by podio\n";
             $filename = fixDirName($file->name);
-            $dbfile = $this->fs->findOne(array('podioItemId'=>$file->file_id));
+            $dbfile = $this->fs->findOne(array('file.podioItemId'=>$file->file_id));
 
             if (!is_null($dbfile)) {
                 echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
