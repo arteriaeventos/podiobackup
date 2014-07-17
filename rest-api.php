@@ -134,7 +134,6 @@ Flight::route('GET /file/@mongofileid', function($mongofileid) {
     header('Content-type: ' . $file['mimeType']);
     header('Content-Disposition: attachment; filename="' . $file['filename'] . '"');
 
-    readfile('original.pdf');
     echo $file->getBytes();
 });
 
