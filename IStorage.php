@@ -10,14 +10,14 @@ interface IStorage {
     function storePodioFile(PodioFile $file, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
 
     /**
-     * @param $bytes can be NULL for external files that should not be stored but only referenced.
-     * @param $filename
-     * @param $mimeType
-     * @param null $originalUrl
+     * @param string $bytes can be NULL for external files that should not be stored but only referenced.
+     * @param string $filename
+     * @param string $mimeType
+     * @param string $originalUrl
      * @param null $podioFileId
-     * @param null $orgName
-     * @param null $spaceName
-     * @param null $appName
+     * @param string $orgName
+     * @param string $spaceName
+     * @param string $appName
      * @param null $podioItemId
      * @return mixed
      */

@@ -132,8 +132,6 @@ class Backup
 
         $appFiles = array();
 
-        $files_in_app_html = "<html><head><title>Files in app: " . $app->config['name'] . "</title></head><body>" .
-            "<table border=1><tr><th>name</th><th>link</th><th>context</th></tr>";
         try {
             #$appFiles = PodioFile::get_for_app($app->app_id, array('attached_to' => 'item'));
             $appFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', $app->app_id, array(), FILE_GET_FOR_APP_LIMIT);
@@ -177,7 +175,6 @@ class Backup
                 echo "storing non item/comment files..\n";
             $app_files_folder = 'other_files';
 
-            $files_in_app_html .= "<tr><td><b>App Files</b></td><td><a href=$app_files_folder>" . $app_files_folder . "</a></td><td></td></tr>";
             foreach ($appFiles as $file) {
                 if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
                     echo "debug: downloading non item/comment file: $file->name\n";
@@ -186,7 +183,6 @@ class Backup
                     } else {
                         $link = $file->link;
                     }
-                    $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                 }
             }
         } catch (PodioError $e) {
@@ -194,8 +190,6 @@ class Backup
             $appFile .= "\n\nPodio Error:\n" . $e;
         }
         $this->storage->storeFile($appFile, 'all_items_summary.txt', 'text/plain', NULL, NULL, $orgName, $spaceName, $appName);
-        $files_in_app_html .= "</table></body></html>";
-        $this->storage->storeFile($files_in_app_html, "files_in_app.html", 'text/html', NULL, NULL, $orgName, $spaceName, $appName);
         unset($appFile);
         unset($files_in_app_html);
     }
@@ -214,7 +208,6 @@ class Backup
                 if ($file->context['type'] == 'item' && $file->context['id'] == $item->item_id) {
                     $link = $this->storage->storePodioFile($file, $orgName, $spaceName, $appName, $item->item_id);
                     $itemFile .= "File: $link\n";
-                    $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                 }
             }
         }
@@ -233,7 +226,6 @@ class Backup
 
                         $link = $this->storage->storePodioFile($file);
                         $commentsFile .= "File: $link\n";
-                        $files_in_app_html .= "<tr><td>" . $file->name . "</td><td><a href=\"" . $link . "\">" . $link . "</a></td><td>" . $file->context['title'] . "</td></tr>";
                     }
                 }
             }
