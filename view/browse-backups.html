@@ -11,7 +11,8 @@ and open the template in the editor.
     <meta name="viewport" content="width=device-width">
     <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
     <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
-    <link href="jqGrid/css/ui.jqgrid.css" rel="stylesheet">
+    <!-- link href="jqGrid/css/ui.jqgrid.css" rel="stylesheet" -->
+    <link href="DataTables/media/css/jquery.dataTables.css" rel="stylesheet">
 </head>
 <body>
 
@@ -35,28 +36,49 @@ and open the template in the editor.
     <div style="float: left; display: block; width: auto; padding-left: 50px" id="currentcontent">
         <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
             <h1>App</h1>
-            <table id="content-app"></table>
+            <h2>Items</h2>
+            <table id="content-app" class="display" cellspacing="0" width="100%">
+                <thead>
+                <tr>
+                    <th>Podio ID</th>
+                    <th>Title</th>
+                </tr>
+                </thead>
+
+                <tfoot>
+                <tr>
+                    <th>Podio ID</th>
+                    <th>Title</th>
+                </tr>
+                </tfoot>
+            </table>
             <div id="content-app-pager"></div>
 
             <h2>Files</h2>
+
             <div id="backup-app-files"></div>
             <h2>All Files</h2>
+
             <div id="backup-app-files-all"></div>
         </div>
         <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
             <h1>Organization</h1>
 
             <h2>Files</h2>
+
             <div id="backup-org-files"></div>
             <h2>All Files</h2>
+
             <div id="backup-org-files-all"></div>
         </div>
         <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
             <h1>Space</h1>
 
             <h2>Files</h2>
+
             <div id="backup-space-files"></div>
             <h2>All Files</h2>
+
             <div id="backup-space-files-all"></div>
         </div>
         <div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration"
@@ -64,8 +86,10 @@ and open the template in the editor.
             <h1>Backup Iteration</h1>
 
             <h2>Files</h2>
+
             <div id="backup-iteration-files"></div>
             <h2>All Files</h2>
+
             <div id="backup-iteration-files-all"></div>
         </div>
         <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection"
@@ -80,8 +104,10 @@ and open the template in the editor.
             <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
 
             <h2>Files</h2>
+
             <div id="backup-collection-files"></div>
             <h2>All Files</h2>
+
             <div id="backup-collection-files-all"></div>
         </div>
         <div id="backupcontent-start" class="backupcontent backupcontent-start">
@@ -117,8 +143,9 @@ and open the template in the editor.
 <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
 <script src="jstree/dist/jstree.js"></script>
 <script src="jquery.cookie-1.4.1.min.js"></script>
-<script src="jqGrid/js/i18n/grid.locale-en.js"></script>
-<script src="jqGrid/js/jquery.jqGrid.src.js"></script>
+<!-- script src="jqGrid/js/i18n/grid.locale-en.js"></script>
+<script src="jqGrid/js/jquery.jqGrid.src.js"></scrip -->
+<script src="DataTables/media/js/jquery.dataTables.js"></script>
 
 <script>
 
@@ -288,43 +315,18 @@ jQuery(document).ready(function () {
                 loadFiles('#backup-app-files', data.node.data.entityurl + '/files');
                 loadFiles('#backup-app-files-all', data.node.data.entityurl + '/files?all=true');
 
-                $("#content-app").jqGrid({
-                    datatype: function (postdata) {
-                        console.log('loading grid:');
-                        console.log(postdata);
-                        var thegrid = $("#content-app")/*[0]*/;
-                        for (i = 0; i < 20; i++) {
-
-
-                            thegrid.addRowData("1" + i, {
-                                podioid: "my-podio-id-" + i,
-                                title: "my-title"
-                            });
-                        }
-                        thegrid.setGridParam({lastpage: 40})/*.trigger("reloadGrid") CAUSES ENDLESS LOOP!*/;
-                        console.log('using url: ' + data.node.data.url);
-                        $.ajax({
-                            url: data.node.data.url,
-                            data: {start: 0, count: 10},
-                            success: function (msg) {
-                                //thegrid.addXmlData(xmldata.responseXML);
-                                console.log('fetched table content');
-                                console.log(msg);
-                                $('#jsonoutput').text(msg);
-                            }
-                        });
+                $('#content-app').dataTable( {
+                    "destroy": true,
+                    "ajax": {
+                        "url": data.node.data.url,
+                        "dataSrc": ""
                     },
-                    colNames: ['Podio ID', 'Title'],
-                    colModel: [
-                        {name: 'podioid', index: 'podioid'/*, width: 55*/},
-                        {name: 'title', index: 'title'/*, width: 90*/}
-                    ],
-                    pager: '#content-app-pager',
-                    rowNum: 10,
-                    rowList: [10, 20, 30],
-                    viewrecords: true,
-                    caption: 'My first grid'
-                });
+                    "columns": [
+                        { "data": "item_id" },
+                        { "data": "title" }
+                    ]
+                } );
+
                 break;
             default :
                 console.warn('unexpected type: ' + data.node.data.type)

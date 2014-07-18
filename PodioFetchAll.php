@@ -7,30 +7,55 @@ require_once 'RateLimitChecker.php';
  *
  * @author SCHRED
  */
-class PodioFetchAll {
+class PodioFetchAll
+{
+    /**
+     * The json result of the last request is element wise added to $store.
+     * Important: this must be called immediately after the API call and <i>before</i> RateLimitChecker::preventTimeOut()
+     * @param array $store
+     * @param string $resulttype if not NULL $store[$resulttype] is used
+     */
+    public static function storeRawResponse(&$store, $resulttype = null)
+    {
+        $raw_response = Podio::$last_response->json_body();
+        //echo "DEBUG raw response:\n";
+        //var_dump($raw_response);
+        if (!is_null($resulttype)) {
+            $response = $raw_response[$resulttype];
+        } else {
+            $response = $raw_response;
+        }
+        foreach ($response as $response_item) {
+            array_push($store, $response_item);
+        }
+    }
 
     /**
      * Wrapper to fetch all elements besides some from podio imposed maxresult.
-     * 
+     *
      * Examples:
-     * 
+     *
      * $result = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', "YOUR_APP_ID", array('attached_to' => 'item'));
      * $result = PodioFetchAll::iterateApiCall('PodioItem::filter', "YOUR_APP_ID", array(), "items");
-     * 
+     *
      * @param string $function e.g. 'PodioFile::get_for_app'
      * @param type $id first parameter of function
-     * @param type $params
+     * @param array $params
      * @param int $limit no of elements fetched on each call
-     * @param String $resulttype if set, the result of the call is suspected to be in $result[$resulttype]
+     * @param string $resulttype if set, the result of the call is suspected to be in $result[$resulttype]
+     * @param array $items_as_array if given, the raw responses are added element wise to this array
      * @return array array of all fetched elements
      */
-    public static function iterateApiCall($function, $id, $params = array(), $limit = 100, $resulttype = null) {
+    public static function iterateApiCall($function, $id, $params = array(), $limit = 100, $resulttype = null, &$items_as_array = null)
+    {
         $completed = false;
         $iteration = 0;
         $result = array();
         while (!$completed) {
             #$tmp_result = $function($id, array_merge($params, array("limit" => $limit, 'offset' => $limit * $iteration)));
             $tmp_result = call_user_func($function, $id, array_merge($params, array('limit' => $limit, 'offset' => $limit * $iteration)));
+            if (!is_null($items_as_array))
+                self::storeRawResponse($items_as_array, $resulttype);
             RateLimitChecker::preventTimeOut();
             echo "done iteration $iteration\n"; #(result: " . var_dump($tmp_result) . ")\n";
 
@@ -70,36 +95,38 @@ class PodioFetchAll {
         return $result;
     }
 
-    public static function podioElements(array $elements) {
+    public static function podioElements(array $elements)
+    {
         return array('__attributes' => $elements, '__properties' => $elements);
     }
 
     /**
      * Removes all elements/properties of $object, that are not defined in $elements.
      * This can be used to save memory when handling large lists of items.
-     * 
+     *
      * Be aware that podio objects make use of the __get(..) and __set(..) funktions,
      * hence a direct removal of the attributes is not possible - on might use PodioFetchAll::podioElemnts(..)
-     * 
+     *
      * Example usage:
-     * 
+     *
      * PodioFetchAll::flattenObjectsArray($appFiles, array('__attributes' =>
      *       array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
      *           'context' => array('id' => NULL, 'type' => null, 'title' => null)),
      *       '__properties' => array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
      *           'context' => NULL)));
-     * 
+     *
      * analogous:
-     * 
-     * PodioFetchAll::flattenObjectsArray($appFiles, 
+     *
+     * PodioFetchAll::flattenObjectsArray($appFiles,
      *           PodioFetchAll::podioElemnts(array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
      *                       'context' => array('id' => NULL, 'type' => null, 'title' => null)));
-     * 
-     * 
+     *
+     *
      * @param type $object can be class or array
      * @param array $elements
      */
-    public static function flattenObject(&$object, array $elements) {
+    public static function flattenObject(&$object, array $elements)
+    {
         //unset all propterties/elements of $object:
         if (is_array($object)) {
             foreach (array_keys($object) as $key) {
@@ -138,7 +165,8 @@ class PodioFetchAll {
      * @param array $elements
      * @return array
      */
-    public static function flattenObjectsArray(array &$objects, array $elements) {
+    public static function flattenObjectsArray(array &$objects, array $elements)
+    {
         $start = time();
         foreach ($objects as $object) {
             self::flattenObject($object, $elements);

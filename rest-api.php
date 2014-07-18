@@ -376,14 +376,16 @@ Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiter
             $items->skip($start);
         }
 
+        error_log("query: ".var_export($query, true)."\n", 3, 'myphperror.log');
         error_log("fetching $count items. start=$start\n", 3, 'myphperror.log');
-
+        error_log("query result: ".var_export($items, true)."\n", 3, 'myphperror.log');
         $result = array();
 
         foreach ($items as $item) {
-            $podioItem = unserialize($item['value']);
-            array_push($result, $podioItem->as_json());
+            array_push($result, $item['value']);
         }
+        error_log("fetched ".sizeof($result)." items.\n", 3, 'myphperror.log');
+        error_log("result: ".var_export($result, true)."\n", 3, 'myphperror.log');
         Flight::json($result);
     }
 });

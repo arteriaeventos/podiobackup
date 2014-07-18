@@ -88,7 +88,7 @@ class Storage implements IStorage
         if (!is_null($podioItemId))
             $metadata['podioItemId'] = array($podioItemId);
 
-        if(is_null($bytes)) {
+        if (is_null($bytes)) {
             $metadata['external'] = true;
             $result = $this->fs->storeBytes('external file', $metadata);
         } else {
@@ -96,7 +96,7 @@ class Storage implements IStorage
             $result = $this->fs->storeBytes($bytes, $metadata);
         }
 
-        return $result->id;
+        return $result->{'$id'};
     }
 
     function storePodioFile(PodioFile $file, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
@@ -104,38 +104,39 @@ class Storage implements IStorage
         echo "storing file $file->name\n";
         #var_dump($file);
         $link = $file->link;
-        if ($file->hosted_by == "podio") {
-            echo "file hosted by podio\n";
-            $dbfile = $this->fs->findOne(array('podioFileId' => $file->file_id));
+        $dbfile = $this->fs->findOne(array('podioFileId' => $file->file_id));
 
-            if (!is_null($dbfile)) {
-                echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
-                $changed = false;
-                $attributes = array(
-                    'backupId' => $this->backupId,
-                    'organization' => $orgName,
-                    'space' => $spaceName,
-                    'app' => $appName,
-                    'podioItemId' => $podioItemId
-                );
-                foreach ($attributes as $key => $value) {
-                    if (!is_null($value)) {
-                        if (isset($dbfile->file[$key])) {
-                            if (!in_array($value, $dbfile->file[$key])) {
-                                array_push($dbfile->file[$key], $value);
-                                $changed = true;
-                            }
-                        } else {
-                            $dbfile->file[$key] = array($value);
+
+        if (!is_null($dbfile)) {
+            echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
+            $changed = false;
+            $attributes = array(
+                'backupId' => $this->backupId,
+                'organization' => $orgName,
+                'space' => $spaceName,
+                'app' => $appName,
+                'podioItemId' => $podioItemId
+            );
+            foreach ($attributes as $key => $value) {
+                if (!is_null($value)) {
+                    if (isset($dbfile->file[$key])) {
+                        if (!in_array($value, $dbfile->file[$key])) {
+                            array_push($dbfile->file[$key], $value);
                             $changed = true;
                         }
+                    } else {
+                        $dbfile->file[$key] = array($value);
+                        $changed = true;
                     }
                 }
-                if ($changed) {
-                    $this->fs->save($dbfile->file);
-                }
-                return $dbfile->file['_id']->{'$id'};
-            } else {
+            }
+            if ($changed) {
+                $this->fs->save($dbfile->file);
+            }
+            return $dbfile->file['_id']->{'$id'};
+        } else {
+            if ($file->hosted_by == "podio") {
+                echo "file hosted by podio\n";
                 try {
                     $fileId = $this->storeFile(
                         $file->get_raw(), $file->name, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
@@ -148,17 +149,17 @@ class Storage implements IStorage
                     // You normally want this one, a human readable error description
                     echo $e->body['error_description'];
                 }
+            } else {
+                echo "Not downloading file hosted by " . $file->hosted_by . "\n";
+                $fileId = $this->storeFile(
+                    NULL, $file->name, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
             }
-        } else {
-            echo "Not downloading file hosted by " . $file->hosted_by . "\n";
-            $fileId = $this->storeFile(
-                NULL, $file->name, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
         }
 
         return $link;
     }
 
-    function store(&$value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
+    function store($value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
 
         $item = array('backupId' => $this->backupId, 'value' => ((!is_string($value) && is_object($value)) ? serialize($value) : $value));

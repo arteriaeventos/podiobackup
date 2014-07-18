@@ -150,7 +150,13 @@ class Backup
 
         try {
             echo "fetching items for app $app->app_id\n";
-            $allitems = PodioFetchAll::iterateApiCall('PodioItem::filter', $app->app_id, array(), ITEM_FILTER_LIMIT, 'items');
+            $items_as_array = array();
+            $allitems = PodioFetchAll::iterateApiCall('PodioItem::filter', $app->app_id, array(), ITEM_FILTER_LIMIT, 'items', $items_as_array);
+
+            echo "DEBUG allitems:\n";
+            var_dump($allitems);
+            echo "DEBUG allitems as array:\n";
+            var_dump($items_as_array);
 
             echo "app contains " . sizeof($allitems) . " items.\n";
 
@@ -166,10 +172,9 @@ class Backup
             gc_collect_cycles();
             echo "gc took : " . (time() - $before) . " seconds.\n";
 
-            foreach ($allitems as $item) {
-                $this->backup_item($item, $appFiles, $appFile, $orgName, $spaceName, $appName);
+            for($i=0; $i<sizeof($allitems); $i++) {
+                $this->backup_item($allitems[$i], $appFiles, $appFile, $orgName, $spaceName, $appName, $items_as_array[$i]);
             }
-
             //store non item/comment files:
             if ($verbose)
                 echo "storing non item/comment files..\n";
@@ -194,7 +199,16 @@ class Backup
         unset($files_in_app_html);
     }
 
-    function backup_item($item, $appFiles, &$appFile, $orgName, $spaceName, $appName)
+    /**
+     * @param $item
+     * @param $appFiles
+     * @param $appFile
+     * @param $orgName
+     * @param $spaceName
+     * @param $appName
+     * @param $item_as_array should reflect the original/raw API response
+     */
+    function backup_item($item, $appFiles, &$appFile, $orgName, $spaceName, $appName, $item_as_array)
     {
         global $verbose;
         if ($verbose)
@@ -235,7 +249,7 @@ class Backup
         }
         $this->storage->storeFile($itemFile . $commentsFile, fixDirName($item->item_id . '-' . $item->title) . '.txt', 'text/plain', NULL, NULL, $orgName, $spaceName, $appName, $item->item_id);
 
-        $this->storage->store($item->as_json(false), 'original item', $orgName, $spaceName, $appName, $item->item_id);
+        $this->storage->store($item_as_array, 'original item', $orgName, $spaceName, $appName, $item->item_id);
 
         $appFile .= $itemFile . "\n\n";
     }
