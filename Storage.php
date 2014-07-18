@@ -88,8 +88,13 @@ class Storage implements IStorage
         if (!is_null($podioItemId))
             $metadata['podioItemId'] = array($podioItemId);
 
-        /* type MongoId */
-        $result = $this->fs->storeBytes($bytes, $metadata);
+        if(is_null($bytes)) {
+            $metadata['external'] = true;
+            $result = $this->fs->storeBytes('external file', $metadata);
+        } else {
+            /* type MongoId */
+            $result = $this->fs->storeBytes($bytes, $metadata);
+        }
 
         return $result->id;
     }
@@ -101,7 +106,6 @@ class Storage implements IStorage
         $link = $file->link;
         if ($file->hosted_by == "podio") {
             echo "file hosted by podio\n";
-            $filename = $file->name;
             $dbfile = $this->fs->findOne(array('podioFileId' => $file->file_id));
 
             if (!is_null($dbfile)) {
@@ -134,7 +138,7 @@ class Storage implements IStorage
             } else {
                 try {
                     $fileId = $this->storeFile(
-                        $file->get_raw(), $filename, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
+                        $file->get_raw(), $file->name, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
                     RateLimitChecker::preventTimeOut();
                     return $fileId;
                 } catch (PodioBadRequestError $e) {
@@ -147,6 +151,8 @@ class Storage implements IStorage
             }
         } else {
             echo "Not downloading file hosted by " . $file->hosted_by . "\n";
+            $fileId = $this->storeFile(
+                NULL, $file->name, $file->mimetype, $file->link, $file->file_id, $orgName, $spaceName, $appName, $podioItemId);
         }
 
         return $link;

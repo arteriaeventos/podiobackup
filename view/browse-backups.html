@@ -132,7 +132,11 @@ function loadFiles(domId, url) {
             console.log('fetched files (url:' + url + '): ');
             console.log(msg);
             for (i in msg) {
-                $(domId).append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
+                if ('url' in msg[i]) { //external file
+                    $(domId).append('<a href=' + msg[i]['url'] + '>' + msg[i]['filename'] + '*</a> ');
+                } else {
+                    $(domId).append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
+                }
             }
         }
     });
@@ -302,7 +306,7 @@ jQuery(document).ready(function () {
                     colNames: ['Podio ID', 'Title'],
                     colModel: [
                         {name: 'podioid', index: 'podioid'/*, width: 55*/},
-                        {name: 'title', index: 'title'/*, width: 90*/},
+                        {name: 'title', index: 'title'/*, width: 90*/}
                     ],
                     pager: '#content-app-pager',
                     rowNum: 10,
