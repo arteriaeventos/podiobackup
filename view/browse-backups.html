@@ -30,35 +30,42 @@ and open the template in the editor.
     <pre id="dialog-ajax-error-msg"></pre>
 </div>
 
-<div style="overflow: hidden; padding: 20px">
-    <div id="treeview" style="float: left"></div>
-    <div style="float: left; padding-left: 50px" id="currentcontent">
+<div style="overflow: hidden; display: block; padding: 20px">
+    <div id="treeview" style="float: left; display: block"></div>
+    <div style="float: left; display: block; padding-left: 50px" id="currentcontent">
         <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
             <h1>App</h1>
             <table id="content-app"></table>
             <div id="content-app-pager"></div>
-            <h2>Files</h2>
 
+            <h2>Files</h2>
             <div id="backup-app-files"></div>
             <h2>All Files</h2>
-
             <div id="backup-app-files-all"></div>
         </div>
         <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
             <h1>Organization</h1>
+
+            <h2>Files</h2>
+            <div id="backup-org-files"></div>
+            <h2>All Files</h2>
+            <div id="backup-org-files-all"></div>
         </div>
         <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
             <h1>Space</h1>
+
+            <h2>Files</h2>
+            <div id="backup-space-files"></div>
+            <h2>All Files</h2>
+            <div id="backup-space-files-all"></div>
         </div>
         <div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration"
              style="display: none">
             <h1>Backup Iteration</h1>
 
             <h2>Files</h2>
-
             <div id="backup-iteration-files"></div>
             <h2>All Files</h2>
-
             <div id="backup-iteration-files-all"></div>
         </div>
         <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection"
@@ -71,11 +78,10 @@ and open the template in the editor.
                 Backup Iteration
             </button>
             <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
-            <h2>Files</h2>
 
+            <h2>Files</h2>
             <div id="backup-collection-files"></div>
             <h2>All Files</h2>
-
             <div id="backup-collection-files-all"></div>
         </div>
         <div id="backupcontent-start" class="backupcontent backupcontent-start">
@@ -257,7 +263,6 @@ jQuery(document).ready(function () {
 
                 loadFiles('#backup-collection-files', data.node.data.entityurl + '/files');
                 loadFiles('#backup-collection-files-all', data.node.data.entityurl + '/files?all=true');
-
                 break;
             case 2:
                 $('#backupcontent-backupiteration').show();
@@ -267,9 +272,15 @@ jQuery(document).ready(function () {
                 break;
             case 3:
                 $('#backupcontent-org').show();
+
+                loadFiles('#backup-org-files', data.node.data.entityurl + '/files');
+                loadFiles('#backup-org-files-all', data.node.data.entityurl + '/files?all=true');
                 break;
             case 4:
                 $('#backupcontent-space').show();
+
+                loadFiles('#backup-space-files', data.node.data.entityurl + '/files');
+                loadFiles('#backup-space-files-all', data.node.data.entityurl + '/files?all=true');
                 break;
             case 5:
                 $('#backupcontent-app').show();
