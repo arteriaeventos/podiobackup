@@ -376,17 +376,33 @@ Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiter
             $items->skip($start);
         }
 
-        error_log("query: ".var_export($query, true)."\n", 3, 'myphperror.log');
+        error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
         error_log("fetching $count items. start=$start\n", 3, 'myphperror.log');
-        error_log("query result: ".var_export($items, true)."\n", 3, 'myphperror.log');
+        error_log("query result: " . var_export($items, true) . "\n", 3, 'myphperror.log');
         $result = array();
 
         foreach ($items as $item) {
             array_push($result, $item['value']);
         }
-        error_log("fetched ".sizeof($result)." items.\n", 3, 'myphperror.log');
-        error_log("result: ".var_export($result, true)."\n", 3, 'myphperror.log');
+        error_log("fetched " . sizeof($result) . " items.\n", 3, 'myphperror.log');
+        error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
         Flight::json($result);
+    } else {
+        $query = array(
+            'description' => 'original item',
+            'backupId' => $backupiteration,
+            'organization' => $org,
+            'space' => $space,
+            'app' => $app,
+            'podioItemId' => intval($item)
+        );
+        $theItem = getDbForUser()->selectCollection($backupcollection)->findOne($query);
+        if (is_null($theItem)) {
+            Flight::halt('404', 'Item with id=' . $item . ' not found.');
+        } else {
+            Flight::json($theItem['value']);
+        }
+
     }
 });
 

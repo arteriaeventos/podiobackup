@@ -11,7 +11,6 @@ and open the template in the editor.
     <meta name="viewport" content="width=device-width">
     <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
     <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
-    <!-- link href="jqGrid/css/ui.jqgrid.css" rel="stylesheet" -->
     <link href="DataTables/media/css/jquery.dataTables.css" rel="stylesheet">
 </head>
 <body>
@@ -36,12 +35,17 @@ and open the template in the editor.
     <div style="float: left; display: block; width: auto; padding-left: 50px" id="currentcontent">
         <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
             <h1>App</h1>
+
             <h2>Items</h2>
             <table id="content-app" class="display" cellspacing="0" width="100%">
                 <thead>
                 <tr>
                     <th>Podio ID</th>
                     <th>Title</th>
+                    <th>Link</th>
+                    <th>Created By</th>
+                    <th>Create Date</th>
+                    <th>Last Change</th>
                 </tr>
                 </thead>
 
@@ -49,10 +53,18 @@ and open the template in the editor.
                 <tr>
                     <th>Podio ID</th>
                     <th>Title</th>
+                    <th>Link</th>
+                    <th>Created By</th>
+                    <th>Create Date</th>
+                    <th>Last Change</th>
                 </tr>
                 </tfoot>
             </table>
             <div id="content-app-pager"></div>
+
+            <h2>Selected Item</h2>
+
+            <div id="content-app-item"></div>
 
             <h2>Files</h2>
 
@@ -143,8 +155,6 @@ and open the template in the editor.
 <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
 <script src="jstree/dist/jstree.js"></script>
 <script src="jquery.cookie-1.4.1.min.js"></script>
-<!-- script src="jqGrid/js/i18n/grid.locale-en.js"></script>
-<script src="jqGrid/js/jquery.jqGrid.src.js"></scrip -->
 <script src="DataTables/media/js/jquery.dataTables.js"></script>
 
 <script>
@@ -205,6 +215,88 @@ function reloadSubtree(parentnode) {
         tree.select_node(node);
     }
 
+}
+
+function renderItem(url) {
+    var content = $('#content-app-item');
+    $.ajax({
+        url: url,
+        success: function (msg) {
+            console.log('fetchted item: ');
+            console.log(msg);
+            for (i in msg.fields) {
+                var field = renderField(msg.fields[i]);
+                content.append(field + '<br>');
+            }
+        }
+    });
+}
+
+function renderFieldValue(field) {
+
+    if (field.type == 'date') {
+        return  field.values[0].start + ' - ' + field.values[0].end;
+
+    } else if (field.type == 'category') {
+        //single and multi:
+        var selections = field.values.map(function (selection) {
+            return selection.value.text;
+        });
+        return  selections.join(' | ');
+
+    } else if (field.type == 'embed') {
+        var urls = field.values.map(function (embedvalue) {
+            return embedvalue.embed.original_url;
+        });
+        return  urls.join(' | ');
+
+    } else if (field.type in ['progress', 'number']) {
+        return  field.values[0].value;
+
+    } else if (field.type == 'money') {
+        return  field.values[0].value + ' ' + field.values[0].currency;
+
+    } else if (field.type == 'duration') {
+        var duration_seconds = parseInt(field.values[0].value);
+        var result = '';
+        if (duration_seconds >= 3600) {
+            result += Math.floor(duration_seconds / 3600) + ' hours '
+        }
+        if (duration_seconds >= 60) {
+            result += Math.floor((duration_seconds % 3600) / 60) + ' minutes '
+        }
+        return result + Math.floor(duration_seconds % 60) + ' seconds';
+
+    } else if (field.type == 'app') {
+        var refrences = field.values.map(function (ref_value) {
+            return ref_value.app.name + ': ' + ref_value.item_id + '(' + ref_value.title + ')';
+        });
+        return refrences.join(' | ');
+
+    } else if (field.type == 'location') {
+        var locations = field.values.map(function (location) {
+            return location.value;
+        });
+        return  locations.join(' | ');
+
+    } else if (field.type == 'image') {
+        var images = field.values.map(function (image) {
+            return image.value.name + '(fileid: ' + image.value.file_id
+            ')';
+        });
+        return  images.join(' | ');
+    } else if (field.type == 'contact') {
+        var contacts = field.values.map(function (contact) {
+            return contact.value.name;
+        });
+        return  contacts.join(' | ');
+    }
+    return  field.values[0].value;
+
+}
+
+function renderField(field) {
+    return field.label + ': ' + renderFieldValue(field);
 }
 
 jQuery(document).ready(function () {
@@ -315,17 +407,23 @@ jQuery(document).ready(function () {
                 loadFiles('#backup-app-files', data.node.data.entityurl + '/files');
                 loadFiles('#backup-app-files-all', data.node.data.entityurl + '/files?all=true');
 
-                $('#content-app').dataTable( {
+                $('#content-app tbody').off('click', 'tr');
+                $('#content-app').dataTable({
                     "destroy": true,
                     "ajax": {
                         "url": data.node.data.url,
                         "dataSrc": ""
                     },
                     "columns": [
-                        { "data": "item_id" },
-                        { "data": "title" }
+                        {"data": "item_id" },
+                        {"data": "title" },
+                        {"data": "link"},
+                        {"data": "created_by.name"},
+                        {"data": "created_on"},
+                        {"data": "last_event_on"}
                     ]
-                } );
+                });
+
 
                 break;
             default :
@@ -334,6 +432,21 @@ jQuery(document).ready(function () {
         }
     });
 
+    $('#content-app')
+            .on('init.dt', function (e, settings, json) {
+                $('#content-app tbody').on('click', 'tr', function () {
+                    if ($(this).hasClass('selected')) {
+                        // no deselect:
+                        //$(this).removeClass('selected');
+                    }
+                    else {
+                        $('tr.selected').removeClass('selected');
+                        $(this).addClass('selected');
+                        var podioId = $('td:first-child', this).text();
+                        renderItem(currenturl + '/' + podioId);
+                    }
+                });
+            })
 
     $('#treeview').on('open_node.jstree', function (e, data) {
         console.log('opend node');
