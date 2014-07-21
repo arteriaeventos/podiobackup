@@ -37,34 +37,12 @@ and open the template in the editor.
             <h1>App</h1>
 
             <h2>Items</h2>
-            <table id="content-app" class="display" cellspacing="0" width="100%">
-                <thead>
-                <tr>
-                    <th>Podio ID</th>
-                    <th>Title</th>
-                    <th>Link</th>
-                    <th>Created By</th>
-                    <th>Create Date</th>
-                    <th>Last Change</th>
-                </tr>
-                </thead>
-
-                <tfoot>
-                <tr>
-                    <th>Podio ID</th>
-                    <th>Title</th>
-                    <th>Link</th>
-                    <th>Created By</th>
-                    <th>Create Date</th>
-                    <th>Last Change</th>
-                </tr>
-                </tfoot>
-            </table>
+            <table id="content-app" class="display" cellspacing="0" width="100%"></table>
             <div id="content-app-pager"></div>
 
-            <h2>Selected Item</h2>
+            <h2 id="content-app-item-title">Selected Item</h2>
 
-            <div id="content-app-item"></div>
+            <table id="content-item-table" class="display" cellspacing="0" width="100%"></table>
 
             <h2>Files</h2>
 
@@ -218,46 +196,44 @@ function reloadSubtree(parentnode) {
 }
 
 function renderItem(url) {
-    var content = $('#content-app-item');
+    var table = $('#content-item-table').dataTable().api();
+    table.clear();
+    $('#content-app-item-title').text('Loading Item..');
     $.ajax({
         url: url,
         success: function (msg) {
             console.log('fetchted item: ');
             console.log(msg);
+            $('#content-app-item-title').text('Item: ' + msg.title);
+
             for (i in msg.fields) {
-                var field = renderField(msg.fields[i]);
-                content.append(field + '<br>');
+                table.row.add([msg.fields[i].label, renderFieldValues(msg.fields[i])]);
             }
+            table.draw();
         }
     });
 }
 
-function renderFieldValue(field) {
+function renderFieldValue(type, value) {
 
-    if (field.type == 'date') {
-        return  field.values[0].start + ' - ' + field.values[0].end;
+    if (type == 'date') {
+        return  value.start + ' - ' + value.end;
 
-    } else if (field.type == 'category') {
-        //single and multi:
-        var selections = field.values.map(function (selection) {
-            return selection.value.text;
-        });
-        return  selections.join(' | ');
+    } else if (type == 'category') {
+        return value.value.text;
 
-    } else if (field.type == 'embed') {
-        var urls = field.values.map(function (embedvalue) {
-            return embedvalue.embed.original_url;
-        });
-        return  urls.join(' | ');
+    } else if (type == 'embed') {
+        var originalurl = value.embed.original_url;
+        return '<a target="_blank" href="' + originalurl + '">' + originalurl + '</a>';
 
-    } else if (field.type in ['progress', 'number']) {
-        return  field.values[0].value;
+    } else if (type in ['progress', 'number']) {
+        return  value.value;
 
-    } else if (field.type == 'money') {
-        return  field.values[0].value + ' ' + field.values[0].currency;
+    } else if (type == 'money') {
+        return  value.value + ' ' + value.currency;
 
-    } else if (field.type == 'duration') {
-        var duration_seconds = parseInt(field.values[0].value);
+    } else if (type == 'duration') {
+        var duration_seconds = parseInt(value.value);
         var result = '';
         if (duration_seconds >= 3600) {
             result += Math.floor(duration_seconds / 3600) + ' hours '
@@ -267,36 +243,27 @@ function renderFieldValue(field) {
         }
         return result + Math.floor(duration_seconds % 60) + ' seconds';
 
-    } else if (field.type == 'app') {
-        var refrences = field.values.map(function (ref_value) {
-            return ref_value.app.name + ': ' + ref_value.item_id + '(' + ref_value.title + ')';
-        });
-        return refrences.join(' | ');
+    } else if (type == 'app') {
+        return value.value.app.name + ': ' + value.value.item_id + '(' + value.value.title + ')';
 
-    } else if (field.type == 'location') {
-        var locations = field.values.map(function (location) {
-            return location.value;
-        });
-        return  locations.join(' | ');
+    } else if (type == 'location') {
+        return value.value;
 
-    } else if (field.type == 'image') {
-        var images = field.values.map(function (image) {
-            return image.value.name + '(fileid: ' + image.value.file_id
-            ')';
-        });
-        return  images.join(' | ');
-    } else if (field.type == 'contact') {
-        var contacts = field.values.map(function (contact) {
-            return contact.value.name;
-        });
-        return  contacts.join(' | ');
+    } else if (type == 'image') {
+        return value.value.name + ' (fileid: ' + value.value.file_id + ')';
+
+    } else if (type == 'contact') {
+        return value.value.name;
     }
-    return  field.values[0].value;
+    return  value.value;
 
 }
 
-function renderField(field) {
-    return field.label + ': ' + renderFieldValue(field);
+function renderFieldValues(field) {
+    var values = field.values.map(function (value) {
+        return renderFieldValue(field.type, value);
+    });
+    return values.join(' | ');
 }
 
 jQuery(document).ready(function () {
@@ -408,6 +375,15 @@ jQuery(document).ready(function () {
                 loadFiles('#backup-app-files-all', data.node.data.entityurl + '/files?all=true');
 
                 $('#content-app tbody').off('click', 'tr');
+                $('#content-item-table').dataTable({
+                            destroy: true,
+                            columns: [
+                                {"title": "Label"},
+                                {"title": "Value(s)"}
+                            ]
+                        }
+                )
+                ;
                 $('#content-app').dataTable({
                     "destroy": true,
                     "ajax": {
@@ -415,12 +391,12 @@ jQuery(document).ready(function () {
                         "dataSrc": ""
                     },
                     "columns": [
-                        {"data": "item_id" },
-                        {"data": "title" },
-                        {"data": "link"},
-                        {"data": "created_by.name"},
-                        {"data": "created_on"},
-                        {"data": "last_event_on"}
+                        {"data": "item_id", title: 'Podio ID' },
+                        {"data": "title", title: 'Title' },
+                        {"data": "link", title: 'Link'},
+                        {"data": "created_by.name", title: 'Created By'},
+                        {"data": "created_on", title: 'Create Date'},
+                        {"data": "last_event_on", title: 'Last Change'}
                     ]
                 });
 
@@ -602,7 +578,8 @@ jQuery(document).ready(function () {
     };
     $('#treeview').jstree(true).create_node(rootnode, 'loading..');
 
-});
+})
+;
 
 
 </script>
