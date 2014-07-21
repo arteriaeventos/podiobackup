@@ -30,6 +30,12 @@ class PodioFetchAll
         }
     }
 
+    public static function getRawResponse($resulttype = null) {
+        $result = array();
+        self::storeRawResponse($result, $resulttype);
+        return $result;
+    }
+
     /**
      * Wrapper to fetch all elements besides some from podio imposed maxresult.
      *

@@ -33,7 +33,9 @@ function getMongo()
 function getDbForUser($useCookie = false)
 {
     $curr_user = getUser($useCookie);
-    return getMongo()->selectDB($curr_user['db']);
+    $db = $curr_user['db'];
+    error_log("selecting db: $db\n", 3, 'myphperror.log');
+    return getMongo()->selectDB($db);
 }
 
 /**
@@ -273,6 +275,26 @@ Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiterat
     $collection = getDbForUser()->selectCollection($backupcollection);
     $items = $collection->find($query);
     Flight::json(sizeof($items));
+});
+
+Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/app/@app/item/@item/comments', function ($backupcollection, $backupiteration, $org, $space, $app, $item) {
+    $query = array(
+        'description' => 'original comment',
+        'backupId' => $backupiteration,
+        'organization' => $org,
+        'space' => $space,
+        'app' => $app,
+        'podioItemId' => intval($item)
+    );
+
+    $collection = getDbForUser()->selectCollection($backupcollection);
+    $comments = $collection->find($query);
+    error_log("collection: " . var_export($backupcollection, true) . "\n", 3, 'myphperror.log');
+    error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
+    error_log("result: " . var_export($comments, true) . "\n", 3, 'myphperror.log');
+
+    //$comments->sort(array('value.created_on' => 1));
+    Flight::json($comments);
 });
 
 /* files */

@@ -172,7 +172,7 @@ class Backup
             gc_collect_cycles();
             echo "gc took : " . (time() - $before) . " seconds.\n";
 
-            for($i=0; $i<sizeof($allitems); $i++) {
+            for ($i = 0; $i < sizeof($allitems); $i++) {
                 $this->backup_item($allitems[$i], $appFiles, $appFile, $orgName, $spaceName, $appName, $items_as_array[$i]);
             }
             //store non item/comment files:
@@ -230,10 +230,12 @@ class Backup
         if ($item->comment_count > 0) {
             #echo "comments.. (".$item->comment_count.")\n";
             $comments = PodioComment::get_for('item', $item->item_id);
+            $raw_commtents = PodioFetchAll::getRawResponse();
             RateLimitChecker::preventTimeOut();
 
             $commentsFile = "\n\nComments\n--------\n\n";
-            foreach ($comments as $comment) {
+            for ($i = 0; $i < sizeof($comments); $i++) {
+                $comment = $comments[$i];
                 $commentsFile .= 'by ' . $comment->created_by->name . ' on ' . $comment->created_on->format('Y-m-d at H:i:s') . "\n----------------------------------------\n" . $comment->value . "\n\n\n";
                 if ($this->downloadFiles && isset($comment->files) && sizeof($comment->files) > 0) {
                     foreach ($comment->files as $file) {
@@ -242,6 +244,7 @@ class Backup
                         $commentsFile .= "File: $link\n";
                     }
                 }
+                $this->storage->store($raw_commtents[$i], 'original comment', $orgName, $spaceName, $appName, $item->item_id);
             }
         } else {
             $commentsFile = "\n\n[no comments]\n";

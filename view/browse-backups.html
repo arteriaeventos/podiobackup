@@ -195,6 +195,13 @@ function reloadSubtree(parentnode) {
 
 }
 
+function renderComment(comment) {
+    var result = '';
+    result += '<i>' + comment.created_by.name + ' (' + comment.created_on + ')</i>';
+    result += '<p>' + comment.value + '</p>';
+    return result;
+}
+
 function renderItem(url) {
     var table = $('#content-item-table').dataTable().api();
     table.clear();
@@ -210,8 +217,25 @@ function renderItem(url) {
                 table.row.add([msg.fields[i].label, renderFieldValues(msg.fields[i])]);
             }
             table.draw();
+            $.ajax({
+                url: url + '/comments',
+                success: function (msg) {
+                    console.log('fetched comments: ');
+                    console.log(msg);
+                    if (msg.length > 0) {
+                        for (i in msg) {
+                            var comment = msg[i];
+                            table.row.add(['Comment ' + i, renderComment(comment)]);
+                        }
+                    } else {
+                        table.row.add(['<i>No Comments</i>', 'n.a.']);
+                    }
+                    table.draw();
+                }
+            });
         }
     });
+
 }
 
 function renderFieldValue(type, value) {
