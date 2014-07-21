@@ -217,22 +217,22 @@ function renderItem(url) {
                 table.row.add([msg.fields[i].label, renderFieldValues(msg.fields[i])]);
             }
             table.draw();
-            $.ajax({
-                url: url + '/comments',
-                success: function (msg) {
-                    console.log('fetched comments: ');
-                    console.log(msg);
-                    if (msg.length > 0) {
-                        for (i in msg) {
-                            var comment = msg[i];
-                            table.row.add(['Comment ' + i, renderComment(comment)]);
-                        }
-                    } else {
-                        table.row.add(['<i>No Comments</i>', 'n.a.']);
-                    }
-                    table.draw();
+        }
+    });
+    $.ajax({
+        url: url + '/comments',
+        success: function (msg) {
+            console.log('fetched comments: ');
+            console.log(msg);
+            if (msg.length > 0) {
+                for (i in msg) {
+                    var comment = msg[i];
+                    table.row.add(['Comment ' + (parseInt(i) + 1), renderComment(comment)]);
                 }
-            });
+            } else {
+                table.row.add(['<i>No Comments</i>', 'n.a.']);
+            }
+            table.draw();
         }
     });
 

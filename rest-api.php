@@ -289,12 +289,16 @@ Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiterat
 
     $collection = getDbForUser()->selectCollection($backupcollection);
     $comments = $collection->find($query);
-    error_log("collection: " . var_export($backupcollection, true) . "\n", 3, 'myphperror.log');
-    error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
-    error_log("result: " . var_export($comments, true) . "\n", 3, 'myphperror.log');
 
-    //$comments->sort(array('value.created_on' => 1));
-    Flight::json($comments);
+    error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
+
+    $comments->sort(array('value.created_on' => 1));
+
+    $result = array_map(function ($element) {
+        return $element['value'];
+    }, iterator_to_array($comments, false));
+
+    Flight::json($result);
 });
 
 /* files */
