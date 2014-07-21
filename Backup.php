@@ -173,7 +173,7 @@ class Backup
             echo "gc took : " . (time() - $before) . " seconds.\n";
 
             for ($i = 0; $i < sizeof($allitems); $i++) {
-                $this->backup_item($allitems[$i], $appFiles, $appFile, $orgName, $spaceName, $appName, $items_as_array[$i]);
+                $this->backup_item($allitems[$i], $appFiles, $orgName, $spaceName, $appName, $items_as_array[$i]);
             }
             //store non item/comment files:
             if ($verbose)
@@ -202,26 +202,31 @@ class Backup
     /**
      * @param $item
      * @param $appFiles
-     * @param $appFile
      * @param $orgName
      * @param $spaceName
      * @param $appName
      * @param $item_as_array should reflect the original/raw API response
      */
-    function backup_item($item, $appFiles, &$appFile, $orgName, $spaceName, $appName, $item_as_array)
+    function backup_item(PodioItem $item, $appFiles, $orgName, $spaceName, $appName, $item_as_array)
     {
         global $verbose;
         if ($verbose)
             echo " - " . $item->title . "\n";
-
-        $itemFile = HumanFormat::toHumanReadableString($item);
 
         if ($this->downloadFiles) {
             foreach ($appFiles as $file) {
 
                 if ($file->context['type'] == 'item' && $file->context['id'] == $item->item_id) {
                     $link = $this->storage->storePodioFile($file, $orgName, $spaceName, $appName, $item->item_id);
-                    $itemFile .= "File: $link\n";
+                }
+            }
+        }
+
+        //store images:
+        foreach ($item->fields as $field) {
+            if ($field->type == 'image') {
+                foreach ($field->values as $value) {
+                    $this->storage->storePodioFile($value, $orgName, $spaceName, $appName, $item->item_id);
                 }
             }
         }
@@ -233,28 +238,19 @@ class Backup
             $raw_commtents = PodioFetchAll::getRawResponse();
             RateLimitChecker::preventTimeOut();
 
-            $commentsFile = "\n\nComments\n--------\n\n";
             for ($i = 0; $i < sizeof($comments); $i++) {
                 $comment = $comments[$i];
-                $commentsFile .= 'by ' . $comment->created_by->name . ' on ' . $comment->created_on->format('Y-m-d at H:i:s') . "\n----------------------------------------\n" . $comment->value . "\n\n\n";
                 if ($this->downloadFiles && isset($comment->files) && sizeof($comment->files) > 0) {
                     foreach ($comment->files as $file) {
-
                         $link = $this->storage->storePodioFile($file);
-                        $commentsFile .= "File: $link\n";
                     }
                 }
                 $this->storage->store($raw_commtents[$i], 'original comment', $orgName, $spaceName, $appName, $item->item_id);
             }
         } else {
-            $commentsFile = "\n\n[no comments]\n";
             #echo "no comments.. (".$item->comment_count.")\n";
         }
-        $this->storage->storeFile($itemFile . $commentsFile, fixDirName($item->item_id . '-' . $item->title) . '.txt', 'text/plain', NULL, NULL, $orgName, $spaceName, $appName, $item->item_id);
-
         $this->storage->store($item_as_array, 'original item', $orgName, $spaceName, $appName, $item->item_id);
-
-        $appFile .= $itemFile . "\n\n";
     }
 
 }

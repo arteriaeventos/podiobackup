@@ -134,8 +134,16 @@ Flight::route('/logout', function () {
     Flight::halt(204);
 });
 
-Flight::route('GET /file/@mongofileid', function ($mongofileid) {
-    $file = getDbForUser(true)->getGridFS()->findOne(array('_id' => new MongoId($mongofileid)));
+Flight::route('GET /file(/.*)', function () {
+    $mongofileid = Flight::request()->query['mongofileid'];
+    $podiofileid = Flight::request()->query['podiofileid'];
+    $file = null;
+    if (isset($mongofileid) && !is_null($mongofileid)) {
+        $file = getDbForUser(true)->getGridFS()->findOne(array('_id' => new MongoId($mongofileid)));
+    } else if (isset($podiofileid) && !is_null($podiofileid)) {
+        $file = getDbForUser(true)->getGridFS()->findOne(array('podioFileId' => intval($podiofileid)));
+    }
+
     if (is_null($file)) {
         Flight::halt(404, "File with id $mongofileid not found.");
         return;
@@ -313,7 +321,7 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
         'organization' => $org,
         'space' => $space,
         'app' => $app,
-        'podioItemId' => $item
+        'podioItemId' => is_null($item) ? null : intval($item)
     );
     error_log("query_params: " . var_export($query_params, true) . "\n", 3, 'myphperror.log');
 

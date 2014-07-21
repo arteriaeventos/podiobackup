@@ -30,9 +30,9 @@ and open the template in the editor.
     <pre id="dialog-ajax-error-msg"></pre>
 </div>
 
-<div style="display: block; padding: 20px">
-    <div id="treeview" style="float: left; display: block"></div>
-    <div style="float: left; display: block; width: auto; padding-left: 50px" id="currentcontent">
+<div style="padding: 20px">
+    <div id="treeview" style="float:left; width: 400px;"></div>
+    <div style="margin-left: 410px;" id="currentcontent">
         <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
             <h1>App</h1>
 
@@ -153,11 +153,7 @@ function loadFiles(domId, url) {
             console.log('fetched files (url:' + url + '): ');
             console.log(msg);
             for (i in msg) {
-                if ('url' in msg[i]) { //external file
-                    $(domId).append('<a href=' + msg[i]['url'] + '>' + msg[i]['filename'] + '*</a> ');
-                } else {
-                    $(domId).append('<a href=../file/' + msg[i]['id'] + '>' + msg[i]['filename'] + '</a> ');
-                }
+                $(domId).append(renderFile(msg[i]) + ' ');
             }
         }
     });
@@ -202,6 +198,14 @@ function renderComment(comment) {
     return result;
 }
 
+function renderFile(file) {
+    if ('url' in file) { //external file
+        return '<a href=' + file['url'] + '>' + file['filename'] + '*</a>';
+    } else {
+        return '<a href="../file/' + file['filename'] + '?mongofileid=' + file['id'] + '">' + file['filename'] + '</a> ';
+    }
+}
+
 function renderItem(url) {
     var table = $('#content-item-table').dataTable().api();
     table.clear();
@@ -217,24 +221,39 @@ function renderItem(url) {
                 table.row.add([msg.fields[i].label, renderFieldValues(msg.fields[i])]);
             }
             table.draw();
-        }
-    });
-    $.ajax({
-        url: url + '/comments',
-        success: function (msg) {
-            console.log('fetched comments: ');
-            console.log(msg);
-            if (msg.length > 0) {
-                for (i in msg) {
-                    var comment = msg[i];
-                    table.row.add(['Comment ' + (parseInt(i) + 1), renderComment(comment)]);
-                }
+            if (parseInt(msg.file_count) > 0) {
+                $.ajax({
+                    url: url + '/files',
+                    success: function (msg) {
+                        console.log('fetched files: ');
+                        console.log(msg);
+                        for (i in msg) {
+                            table.row.add(['<i>File ' + (parseInt(i) + 1) + '</i>', renderFile(msg[i])]);
+                        }
+                        table.draw();
+                    }
+                });
+            }
+            if (parseInt(msg.comment_count) > 0) {
+                $.ajax({
+                    url: url + '/comments',
+                    success: function (msg) {
+                        console.log('fetched comments: ');
+                        console.log(msg);
+                        for (i in msg) {
+                            table.row.add(['<i>Comment ' + (parseInt(i) + 1) + '</i>', renderComment(msg[i])]);
+                        }
+
+                        table.draw();
+                    }
+                });
             } else {
                 table.row.add(['<i>No Comments</i>', 'n.a.']);
+                table.draw();
             }
-            table.draw();
         }
     });
+
 
 }
 
@@ -274,7 +293,7 @@ function renderFieldValue(type, value) {
         return value.value;
 
     } else if (type == 'image') {
-        return value.value.name + ' (fileid: ' + value.value.file_id + ')';
+        return '<a href="../file/' + value.value.name + '?podiofileid=' + value.value.file_id + '">' + value.value.name + '</a>';
 
     } else if (type == 'contact') {
         return value.value.name;
