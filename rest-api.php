@@ -127,6 +127,70 @@ Flight::route('/login', function () {
     Flight::json(array('loginsession' => $curr_user['loginsession']));
 });
 
+Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app)))))', function ($backupcollection, $backupiteration, $org, $space, $app) {
+
+    error_log("gui/tree: " . var_export(Flight::request()->url, true) . "\n", 3, 'myphperror.log');
+
+    $result = array();
+
+    if (is_null($backupcollection)) {
+        $allCollections = getDbForUser()->getCollectionNames();
+        $visibleCollections = array_filter($allCollections, function ($var) {
+            return $var != 'system.indexes' && $var != 'fs.files' && $var != 'fs.chunks';
+        });
+        foreach ($visibleCollections as $collection) {
+            array_push($result, array(
+                'text' => $collection,
+                'children' => sizeof(getDbForUser()->selectCollection($collection)->distinct('backupId')) > 0
+            ));
+        }
+
+    } else if (is_null($backupiteration)) {
+        $collection = getDbForUser()->selectCollection($backupcollection);
+        $backups = $collection->distinct('backupId');
+        foreach ($backups as $backup) {
+            array_push($result, array(
+                'text' => $backup,
+                'children' => sizeof($collection->distinct('organization', array('backupId' => $backup))) > 0
+            ));
+        }
+
+    } else if (is_null($org)) {
+        $collection = getDbForUser()->selectCollection($backupcollection);
+        $orgs = $collection->distinct('organization', array('backupId' => $backupiteration));
+        foreach ($orgs as $org) {
+            array_push($result, array(
+                'text' => $org,
+                'children' => sizeof($collection->distinct('space', array('backupId' => $backupiteration, 'organization' => $org))) > 0
+            ));
+        }
+
+    } else if (is_null($space)) {
+        $collection = getDbForUser()->selectCollection($backupcollection);
+        $spaces = $collection->distinct('space', array('backupId' => $backupiteration, 'organization' => $org));
+        foreach ($spaces as $space) {
+            array_push($result, array(
+                'text' => $space,
+                'children' => sizeof($collection->distinct('app', array('backupId' => $backupiteration, 'organization' => $org, 'space' => $space))) > 0
+            ));
+        }
+
+    } else if (is_null($app)) {
+        $collection = getDbForUser()->selectCollection($backupcollection);
+        $apps = $collection->distinct('app', array('backupId' => $backupiteration, 'organization' => $org, 'space' => $space));
+        foreach ($apps as $app) {
+            array_push($result, array(
+                'text' => $app,
+                'children' => false
+            ));
+        }
+    } else {
+        Flight::halt(404, 'cannot parse url: ' . Flight::request()->url);
+    }
+
+    Flight::json($result);
+});
+
 Flight::route('/logout', function () {
     $curr_user = getUser();
     unset($curr_user['loginsession']);

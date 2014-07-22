@@ -23,6 +23,7 @@ and open the template in the editor.
 </div>
 <div id="logout" style="display: none">
     <button id="logoutbutton">Logout</button>
+    <a href="javascript:$('.backupcontent').hide();$('#backupcontent-start').show();">Homepage</a>
 </div>
 
 <div id="dialog-ajax-error" title="Error">
@@ -179,12 +180,7 @@ function reloadSubtree(parentnode) {
     console.log(parentnode);
     var tree = $('#treeview').jstree(true);
     var node = parentnode === undefined ? getSelectedNode(tree) : tree.get_node(parentnode);
-    tree.close_node(node);
-    tree.delete_node(node.children);
-    node.data.expanded = false;
-    if (types.length > node.data.type + 1) {
-        tree.create_node(node, 'loading..');
-    }
+    tree.refresh(node);
     if (parentnode !== undefined) {
         tree.select_node(node);
     }
@@ -309,6 +305,21 @@ function renderFieldValues(field) {
     return values.join(' | ');
 }
 
+/**
+ * computes the url for the entity of the node - e.g.: for allbackups -> backup1 -> iteration1 => 'backupcollection/backup1/backupiteration/iteration1
+ */
+function computeUrl(node) {
+    var number_of_parents = node.parents.length;
+    var url = '';
+    for (i = 0; i < number_of_parents - 1; i++) {
+        url = types[number_of_parents - i - 2] + '/' + $('#treeview').jstree(true).get_node(node.parents[i]).text + '/' + url;
+    }
+    if (node.id != '#') {
+        url = url + types[number_of_parents - 1] + '/' + node.text;
+    }
+    return url;
+}
+
 jQuery(document).ready(function () {
 
     $(document).ajaxSend(function (event, jqXHR, ajaxOptions) {
@@ -357,8 +368,19 @@ jQuery(document).ready(function () {
     var jstree = $('#treeview').jstree({
         core: {
             check_callback: true, //allow manual node add/remove!
-            multiple: false
-        }
+            multiple: false,
+            'data': {
+                'url': function (node) {
+                    console.log('expanding tree:');
+                    console.log(node);
+                    var url = computeUrl(node);
+                    console.log('computed url:');
+                    console.log(url);
+                    return '../gui/tree/' + url;
+                }
+            }
+        },
+        plugins: ['state']
     });
 
     console.log('created tree: ' + jstree);
@@ -367,17 +389,20 @@ jQuery(document).ready(function () {
         console.log('select_node');
         console.log(data);
         $('.backupcontent').hide();
-        currenturl = data.node.data.url;
-        currententityurl = data.node.data.entityurl;
-        switch (data.node.data.type) {
+        currententityurl = '../' + computeUrl(data.node);
+        currenturl = currententityurl + '/' + (data.node.parents.length >= types.length ? 'item' : types[data.node.parents.length]);
+        console.log('current urls:');
+        console.log(currententityurl);
+        console.log(currenturl);
+        switch (data.node.parents.length) {
             case 0:
                 $('#backupcontent-start').show();
                 break;
             case 1:
                 $('#backupcontent-backupcollection').show();
-                console.log('querying information using url: ' + data.node.data.entityurl);
+                console.log('querying information using url: ' + currententityurl);
                 $.ajax({
-                    url: data.node.data.entityurl,
+                    url: currententityurl,
                     success: function (msg) {
                         console.log('backup metadata:');
                         console.log(msg);
@@ -390,32 +415,32 @@ jQuery(document).ready(function () {
                     }
                 });
 
-                loadFiles('#backup-collection-files', data.node.data.entityurl + '/files');
-                loadFiles('#backup-collection-files-all', data.node.data.entityurl + '/files?all=true');
+                loadFiles('#backup-collection-files', currententityurl + '/files');
+                loadFiles('#backup-collection-files-all', currententityurl + '/files?all=true');
                 break;
             case 2:
                 $('#backupcontent-backupiteration').show();
 
-                loadFiles('#backup-iteration-files', data.node.data.entityurl + '/files');
-                loadFiles('#backup-iteration-files-all', data.node.data.entityurl + '/files?all=true');
+                loadFiles('#backup-iteration-files', currententityurl + '/files');
+                loadFiles('#backup-iteration-files-all', currententityurl + '/files?all=true');
                 break;
             case 3:
                 $('#backupcontent-org').show();
 
-                loadFiles('#backup-org-files', data.node.data.entityurl + '/files');
-                loadFiles('#backup-org-files-all', data.node.data.entityurl + '/files?all=true');
+                loadFiles('#backup-org-files', currententityurl + '/files');
+                loadFiles('#backup-org-files-all', currententityurl + '/files?all=true');
                 break;
             case 4:
                 $('#backupcontent-space').show();
 
-                loadFiles('#backup-space-files', data.node.data.entityurl + '/files');
-                loadFiles('#backup-space-files-all', data.node.data.entityurl + '/files?all=true');
+                loadFiles('#backup-space-files', currententityurl + '/files');
+                loadFiles('#backup-space-files-all', currententityurl + '/files?all=true');
                 break;
             case 5:
                 $('#backupcontent-app').show();
 
-                loadFiles('#backup-app-files', data.node.data.entityurl + '/files');
-                loadFiles('#backup-app-files-all', data.node.data.entityurl + '/files?all=true');
+                loadFiles('#backup-app-files', currententityurl + '/files');
+                loadFiles('#backup-app-files-all', currententityurl + '/files?all=true');
 
                 $('#content-app tbody').off('click', 'tr');
                 $('#content-item-table').dataTable({
@@ -430,7 +455,7 @@ jQuery(document).ready(function () {
                 $('#content-app').dataTable({
                     "destroy": true,
                     "ajax": {
-                        "url": data.node.data.url,
+                        "url": currenturl,
                         "dataSrc": ""
                     },
                     "columns": [
@@ -466,44 +491,6 @@ jQuery(document).ready(function () {
                     }
                 });
             })
-
-    $('#treeview').on('open_node.jstree', function (e, data) {
-        console.log('opend node');
-        console.log(data);
-        if (data.node.data.expanded === false) {
-            console.log('expanding new node..');
-            $.ajax({
-                url: data.node.data.url,
-                success: function (msg) {
-                    $('#treeview').jstree(true).delete_node(data.node.children[0]);
-                    data.node.data.expanded = true;
-
-                    var nexttype = types[data.node.data.type + 1];
-                    if (typeof nexttype === 'undefined') {
-                        nexttype = 'item';
-                    }
-                    for (i in msg) {
-                        var node = $('#treeview').jstree(true).create_node(data.node, msg[i]);
-                        $('#treeview').jstree(true).get_node(node).data = {
-                            expanded: false,
-                            type: data.node.data.type + 1,
-                            url: data.node.data.url + '/' + msg[i].toString() + '/' + nexttype,
-                            entityurl: data.node.data.url + '/' + msg[i].toString()
-                        };
-                        if (types.length > data.node.data.type + 1) {
-                            $('#treeview').jstree(true).create_node(node, 'loading..');
-                        } else {
-                            console.log('dont add loading child to last leaf..')
-                            console.log(types);
-                            console.log(types.length);
-                            console.log(data.node.data.type);
-                            console.log(data.node.data.type + 2);
-                        }
-                    }
-                }
-            })
-        }
-    });
 
     $("#dialog-ajax-error").dialog({
         autoOpen: false,
@@ -611,15 +598,6 @@ jQuery(document).ready(function () {
 
         });
     });
-
-
-    var rootnode = $('#treeview').jstree(true).create_node('#', 'All visible Backups');
-    $('#treeview').jstree(true).get_node(rootnode).data = {
-        expanded: false,
-        type: 0,
-        url: '../' + types[0]
-    };
-    $('#treeview').jstree(true).create_node(rootnode, 'loading..');
 
 })
 ;
