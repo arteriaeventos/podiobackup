@@ -320,51 +320,7 @@ function computeUrl(node) {
     return url;
 }
 
-jQuery(document).ready(function () {
-
-    $(document).ajaxSend(function (event, jqXHR, ajaxOptions) {
-        if (typeof loginsession !== 'undefined') {
-            jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
-            console.log('using login session:');
-            console.log(loginsession);
-        } else if (typeof currentuser !== 'undefined') {
-            jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
-        } else {
-            console.log('no login information found.');
-        }
-    });
-
-    $.ajaxPrefilter(function (options) {
-        console.log('ajaxPrefilter');
-        console.log(options);
-        options.error = function (msg) {
-            console.log('error on ajax call:');
-            console.log(msg);
-            $('#dialog-ajax-error-msg').text(msg['responseText']);
-            $('#dialog-ajax-error').dialog('open');
-        };
-
-    });
-
-    var logincookie = $.cookie('podio_backup_login_session');
-    if (typeof logincookie !== 'undefined') {
-        loginsession = logincookie;
-        $('#logout').hide();
-        $.ajax({
-            url: '../login',
-            success: function (msg) {
-                $('#login').hide();
-                $('#logout').show();
-            },
-            error: function (msg) {
-                console.log('auto login error');
-                console.log(loginsession);
-                console.log(msg);
-                $('#login').show();
-            }
-        })
-    }
-
+function createNavigationTree() {
     var jstree = $('#treeview').jstree({
         core: {
             check_callback: true, //allow manual node add/remove!
@@ -475,6 +431,55 @@ jQuery(document).ready(function () {
                 $('#backupcontent-start').show();
         }
     });
+}
+
+jQuery(document).ready(function () {
+
+    $(document).ajaxSend(function (event, jqXHR, ajaxOptions) {
+        if (typeof loginsession !== 'undefined') {
+            jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
+            console.log('using login session:');
+            console.log(loginsession);
+        } else if (typeof currentuser !== 'undefined') {
+            jqXHR.setRequestHeader('Authorization', 'Basic ' + window.btoa(currentuser + ':' + currentpassword));
+        } else {
+            console.log('no login information found.');
+        }
+    });
+
+    $.ajaxPrefilter(function (options) {
+        console.log('ajaxPrefilter');
+        console.log(options);
+        options.error = function (msg) {
+            console.log('error on ajax call:');
+            console.log(msg);
+            $('#dialog-ajax-error-msg').text(msg['responseText']);
+            $('#dialog-ajax-error').dialog('open');
+        };
+
+    });
+
+    var logincookie = $.cookie('podio_backup_login_session');
+    if (typeof logincookie !== 'undefined') {
+        loginsession = logincookie;
+        $('#logout').hide();
+        $.ajax({
+            url: '../login',
+            success: function (msg) {
+                $('#login').hide();
+                $('#logout').show();
+                createNavigationTree();
+            },
+            error: function (msg) {
+                console.log('auto login error');
+                console.log(loginsession);
+                console.log(msg);
+                $('#login').show();
+            }
+        })
+    }
+
+
 
     $('#content-app')
             .on('init.dt', function (e, settings, json) {
@@ -594,6 +599,7 @@ jQuery(document).ready(function () {
                 $.cookie('podio_backup_login_session', msg['loginsession'], {expires: 7, path: '/'});
                 console.log('stored login session in cookie');
                 console.log(msg['loginsession']);
+                createNavigationTree();
             }
 
         });
