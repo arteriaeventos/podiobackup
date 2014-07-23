@@ -16,7 +16,9 @@ and open the template in the editor.
 <body>
 
 <div id="login">
+    <label for="username">Login</label>
     <input id="username" type="text"/>
+    <label for="password">Password</label>
     <input id="password" type="password"/>
     <button id="loginbutton">Login</button>
     <a href="register.html">Register</a>
@@ -111,11 +113,11 @@ and open the template in the editor.
             <div title="Create new backup">
                 <table>
                     <tr>
-                        <td>Name</td>
+                        <td><label for="create_backup_collection_name">Name</label></td>
                         <td><input id="create_backup_collection_name" type="text" title="Name"></td>
                     </tr>
                     <tr>
-                        <td>Podio Space ID (optional)</td>
+                        <td><label for="create_backup_collection_space_id">Podio Space ID (optional)</label></td>
                         <td><input id="create_backup_collection_space_id" type="text" title="Podio Space ID (optional)">
                         </td>
                     </tr>
@@ -147,13 +149,13 @@ types = ['backupcollection', 'backupiteration', 'org', 'space', 'app'/*, 'item'*
  */
 function loadFiles(domId, url) {
     $(domId).text('');
-    console.log('query files: ' + url)
+    console.log('query files: ' + url);
     $.ajax({
         url: url,
         success: function (msg) {
             console.log('fetched files (url:' + url + '): ');
             console.log(msg);
-            for (i in msg) {
+            for (var i in msg) {
                 $(domId).append(renderFile(msg[i]) + ' ');
             }
         }
@@ -213,7 +215,7 @@ function renderItem(url) {
             console.log(msg);
             $('#content-app-item-title').text('Item: ' + msg.title);
 
-            for (i in msg.fields) {
+            for (var i in msg.fields) {
                 table.row.add([msg.fields[i].label, renderFieldValues(msg.fields[i])]);
             }
             table.draw();
@@ -223,7 +225,7 @@ function renderItem(url) {
                     success: function (msg) {
                         console.log('fetched files: ');
                         console.log(msg);
-                        for (i in msg) {
+                        for (var i in msg) {
                             table.row.add(['<i>File ' + (parseInt(i) + 1) + '</i>', renderFile(msg[i])]);
                         }
                         table.draw();
@@ -236,7 +238,7 @@ function renderItem(url) {
                     success: function (msg) {
                         console.log('fetched comments: ');
                         console.log(msg);
-                        for (i in msg) {
+                        for (var i in msg) {
                             table.row.add(['<i>Comment ' + (parseInt(i) + 1) + '</i>', renderComment(msg[i])]);
                         }
 
@@ -311,7 +313,7 @@ function renderFieldValues(field) {
 function computeUrl(node) {
     var number_of_parents = node.parents.length;
     var url = '';
-    for (i = 0; i < number_of_parents - 1; i++) {
+    for (var i = 0; i < number_of_parents - 1; i++) {
         url = types[number_of_parents - i - 2] + '/' + $('#treeview').jstree(true).get_node(node.parents[i]).text + '/' + url;
     }
     if (node.id != '#') {
@@ -398,7 +400,7 @@ function createNavigationTree() {
                 loadFiles('#backup-app-files', currententityurl + '/files');
                 loadFiles('#backup-app-files-all', currententityurl + '/files?all=true');
 
-                $('#content-app tbody').off('click', 'tr');
+                $('#content-app tbody tr').off('click');
                 $('#content-item-table').dataTable({
                             destroy: true,
                             columns: [
@@ -427,7 +429,7 @@ function createNavigationTree() {
 
                 break;
             default :
-                console.warn('unexpected type: ' + data.node.data.type)
+                console.warn('unexpected type: ' + data.node.data.type);
                 $('#backupcontent-start').show();
         }
     });
@@ -482,7 +484,7 @@ jQuery(document).ready(function () {
 
 
     $('#content-app')
-            .on('init.dt', function (e, settings, json) {
+            .on('init.dt', function () {
                 $('#content-app tbody').on('click', 'tr', function () {
                     if ($(this).hasClass('selected')) {
                         // no deselect:
@@ -527,7 +529,7 @@ jQuery(document).ready(function () {
         $.ajax({
             url: currententityurl,
             type: 'DELETE',
-            success: function (msg) {
+            success: function () {
                 var tree = $('#treeview').jstree(true);
                 var selectedNode = tree.get_selected(true)[0];
                 reloadSubtree(tree.get_parent(selectedNode));
@@ -535,7 +537,7 @@ jQuery(document).ready(function () {
         });
     });
 
-    $('#run_backup_button').on('click', function (e, data) {
+    $('#run_backup_button').on('click', function () {
         console.log('starting backup - url:');
         console.log(currententityurl);
         $.ajax({
@@ -552,7 +554,7 @@ jQuery(document).ready(function () {
 
     });
 
-    $('#create_backup_collection_button').on('click', function (e, data) {
+    $('#create_backup_collection_button').on('click', function () {
         console.log('creating new backup.');
         var url = '../backupcollection/' + $('#create_backup_collection_name').val() + '?spaceId=' + $('#create_backup_collection_space_id').val();
         console.log('creating backup via url: ' + url);
@@ -568,7 +570,7 @@ jQuery(document).ready(function () {
         });
     });
 
-    $('#logoutbutton').on('click', function (e, data) {
+    $('#logoutbutton').on('click', function () {
         $.ajax({
             url: '../logout',
             success: function (msg) {
@@ -580,7 +582,7 @@ jQuery(document).ready(function () {
         });
     });
 
-    $('#loginbutton').on('click', function (e, data) {
+    $('#loginbutton').on('click', function () {
         var user = $('#username').val();
         var password = $('#password').val();
         $.ajax({
