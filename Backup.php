@@ -153,11 +153,6 @@ class Backup
             $items_as_array = array();
             $allitems = PodioFetchAll::iterateApiCall('PodioItem::filter', $app->app_id, array(), ITEM_FILTER_LIMIT, 'items', $items_as_array);
 
-            echo "DEBUG allitems:\n";
-            var_dump($allitems);
-            echo "DEBUG allitems as array:\n";
-            var_dump($items_as_array);
-
             echo "app contains " . sizeof($allitems) . " items.\n";
 
             for ($i = 0; $i < sizeof($allitems); $i += ITEM_XLSX_LIMIT) {
