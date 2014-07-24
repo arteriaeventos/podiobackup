@@ -1,11 +1,23 @@
 <?php
 
-interface IStorage {
+interface IStorage
+{
+    function start();
+
+    function pause_start();
+
+    function pause_end();
+
+    function finished();
 
     /**
      * Backups file if it is hosted by Podio. Assures file is not downloaded twice.
      * @param PodioFile $file
-     * @return type id/url
+     * @param string $orgName
+     * @param string $spaceName
+     * @param string $appName
+     * @param int $podioItemId
+     * @return string id/url
      */
     function storePodioFile(PodioFile $file, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
 
@@ -22,7 +34,7 @@ interface IStorage {
      * @return mixed
      */
     function storeFile(
-    $bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
+        $bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
 
     function store($value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL);
 }

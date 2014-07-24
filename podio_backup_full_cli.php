@@ -163,6 +163,8 @@ function do_backup($downloadFiles) {
 
     $backup = new Backup($storage, $downloadFiles);
 
+    $storage->start();
+
     if (array_key_exists("podioSpace", $config)) {
         $space = PodioSpace::get($config['podioSpace']);
         RateLimitChecker::preventTimeOut();
@@ -171,6 +173,8 @@ function do_backup($downloadFiles) {
     } else {
         $backup->backup_all();
     }
+
+    $storage->finished();
 
     if ($verbose)
         show_success("Backup Completed successfully to " . $backupTo . "/" . $timeStamp);

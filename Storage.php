@@ -34,9 +34,56 @@ class Storage implements IStorage
         $this->backupId = $backupId;
     }
 
+    function start()
+    {
+        $this->store(array(
+            'time_start' => new DateTime(),
+            'status' => 'running'
+        ), 'backup iteration metadata');
+    }
+
+    function pause_start()
+    {
+        $this->collection->update(
+            array(
+                'description' => 'backup iteration metadata',
+                'backupId' => $this->backupId),
+            array(
+                '$set' => array(
+                    'value.status' => 'paused',
+                    'value.time_pause' => new DateTime()
+                )
+            ));
+    }
+
+    function pause_end()
+    {
+        $this->collection->update(
+            array(
+                'description' => 'backup iteration metadata',
+                'backupId' => $this->backupId),
+            array(
+                '$set' => array('value.status' => 'running')
+            ));
+    }
+
+    function finished()
+    {
+        $this->collection->update(
+            array(
+                'description' => 'backup iteration metadata',
+                'backupId' => $this->backupId),
+            array(
+                '$set' => array(
+                    'value.status' => 'finished',
+                    'value.time_end' => new DateTime()
+                )
+            ));
+    }
+
     /**
      *
-     * @global type $mongo
+     * @global MongoClient $mongo
      * @return \MongoClient
      */
     public static function getMongo()
