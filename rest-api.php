@@ -127,6 +127,21 @@ Flight::route('/login', function () {
     Flight::json(array('loginsession' => $curr_user['loginsession']));
 });
 
+Flight::route('GET /backupcollection/@backupcollection/backupiteration/@backupiteration', function ($backupcollection, $backupiteration) {
+    $collection = getDbForUser()->selectCollection($backupcollection);
+    $metadata = $collection->findOne(array(
+        'description' => 'backup iteration metadata',
+        'backupId' => $backupiteration
+    ));
+    if (!is_null($metadata) && $metadata['value']['status'] == 'running' && !isBackupRunning($backupcollection)) {
+        $metadata['value']['status'] = 'aborted';
+        $collection->save($metadata);
+    }
+    Flight::json(array(
+        'status' => is_null($metadata) ? 'undefined' : $metadata['value']['status']
+    ));
+});
+
 Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app)))))', function ($backupcollection, $backupiteration, $org, $space, $app) {
 
     error_log("gui/tree: " . var_export(Flight::request()->url, true) . "\n", 3, 'myphperror.log');
@@ -393,7 +408,7 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
     foreach ($query_params as $key => $value) {
         if (is_null($value)) {
             if (!$all) {
-                $query[$key] = null;
+                $query[$key] = 'NULL';
             }
         } else {
             $query[$key] = $value;
@@ -425,83 +440,6 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
     error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
 
     Flight::json($result);
-});
-
-
-/* browsing */
-Flight::route('/backupcollection(/@backupcollection/backupiteration(/@backupiteration/org(/@org/space(/@space/app(/@app/item(/@item))))))', function ($backupcollection, $backupiteration, $org, $space, $app, $item) {
-
-    if (is_null($backupcollection)) {
-        $allCollections = getDbForUser()->getCollectionNames();
-        Flight::json(array_filter($allCollections, function ($var) {
-            return $var != 'system.indexes' && $var != 'fs.files' && $var != 'fs.chunks';
-        }));
-    } else if (is_null($backupiteration)) {
-        $collection = getDbForUser()->selectCollection($backupcollection);
-        $backups = $collection->distinct('backupId');
-        Flight::json($backups);
-    } else if (is_null($org)) {
-        $collection = getDbForUser()->selectCollection($backupcollection);
-        $orgs = $collection->distinct('organization', array('backupId' => $backupiteration));
-        Flight::json($orgs);
-    } else if (is_null($space)) {
-        $collection = getDbForUser()->selectCollection($backupcollection);
-        $spaces = $collection->distinct('space', array('backupId' => $backupiteration, 'organization' => $org));
-        Flight::json($spaces);
-    } else if (is_null($app)) {
-        $collection = getDbForUser()->selectCollection($backupcollection);
-        $apps = $collection->distinct('app', array('backupId' => $backupiteration, 'organization' => $org, 'space' => $space));
-        Flight::json($apps);
-    } else if (is_null($item)) {
-        $query = array(
-            'description' => 'original item',
-            'backupId' => $backupiteration,
-            'organization' => $org,
-            'space' => $space,
-            'app' => $app
-        );
-
-        $collection = getDbForUser()->selectCollection($backupcollection);
-        $items = $collection->find($query);
-
-        $items->sort(array('_id' => 1)); //here we have an index for sure..
-        $count = Flight::request()->query['count'];
-        if (isset($count) && $count != null) {
-            $items->limit($count);
-        }
-        $start = Flight::request()->query['start'];
-        if (isset($start) && $start != null) {
-            $items->skip($start);
-        }
-
-        error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
-        error_log("fetching $count items. start=$start\n", 3, 'myphperror.log');
-        error_log("query result: " . var_export($items, true) . "\n", 3, 'myphperror.log');
-        $result = array();
-
-        foreach ($items as $item) {
-            array_push($result, $item['value']);
-        }
-        error_log("fetched " . sizeof($result) . " items.\n", 3, 'myphperror.log');
-        error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
-        Flight::json($result);
-    } else {
-        $query = array(
-            'description' => 'original item',
-            'backupId' => $backupiteration,
-            'organization' => $org,
-            'space' => $space,
-            'app' => $app,
-            'podioItemId' => intval($item)
-        );
-        $theItem = getDbForUser()->selectCollection($backupcollection)->findOne($query);
-        if (is_null($theItem)) {
-            Flight::halt('404', 'Item with id=' . $item . ' not found.');
-        } else {
-            Flight::json($theItem['value']);
-        }
-
-    }
 });
 
 Flight::start();

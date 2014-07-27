@@ -126,14 +126,11 @@ class Storage implements IStorage
             $metadata['originalUrl'] = $originalUrl;
         if (!is_null($podioFileId))
             $metadata['podioFileId'] = $podioFileId;
-        if (!is_null($orgName))
-            $metadata['organization'] = array($orgName);
-        if (!is_null($spaceName))
-            $metadata['space'] = array($spaceName);
-        if (!is_null($appName))
-            $metadata['app'] = array($appName);
-        if (!is_null($podioItemId))
-            $metadata['podioItemId'] = array($podioItemId);
+
+        $metadata['organization'] = array(is_null($orgName) ? 'NULL' : $orgName);
+        $metadata['space'] = array(is_null($spaceName) ? 'NULL' : $spaceName);
+        $metadata['app'] = array(is_null($appName) ? 'NULL' : $appName);
+        $metadata['podioItemId'] = array(is_null($podioItemId) ? 'NULL' : $podioItemId);
 
         if (is_null($bytes)) {
             $metadata['external'] = true;
@@ -165,16 +162,15 @@ class Storage implements IStorage
                 'podioItemId' => $podioItemId
             );
             foreach ($attributes as $key => $value) {
-                if (!is_null($value)) {
-                    if (isset($dbfile->file[$key])) {
-                        if (!in_array($value, $dbfile->file[$key])) {
-                            array_push($dbfile->file[$key], $value);
-                            $changed = true;
-                        }
-                    } else {
-                        $dbfile->file[$key] = array($value);
+                $realValue = is_null($value) ? 'NULL' : $value;
+                if (isset($dbfile->file[$key])) {
+                    if (!in_array($realValue, $dbfile->file[$key])) {
+                        array_push($dbfile->file[$key], $realValue);
                         $changed = true;
                     }
+                } else {
+                    $dbfile->file[$key] = array($realValue);
+                    $changed = true;
                 }
             }
             if ($changed) {

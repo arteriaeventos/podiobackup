@@ -12,6 +12,7 @@ and open the template in the editor.
     <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
     <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
     <link href="DataTables/media/css/jquery.dataTables.css" rel="stylesheet">
+    <link href="view-backup.css" rel="stylesheet">
 </head>
 <body>
 
@@ -33,9 +34,10 @@ and open the template in the editor.
     <pre id="dialog-ajax-error-msg"></pre>
 </div>
 
+
 <div style="padding: 20px">
-    <div id="treeview" style="float:left; width: 400px;"></div>
-    <div style="margin-left: 410px;" id="currentcontent">
+    <div id="treeview"></div>
+    <div id="currentcontent">
         <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
             <h1>App</h1>
 
@@ -78,6 +80,8 @@ and open the template in the editor.
              style="display: none">
             <h1>Backup Iteration</h1>
 
+            <div id="backup-iteration-status">Status:</div>
+
             <h2>Files</h2>
 
             <div id="backup-iteration-files"></div>
@@ -103,7 +107,56 @@ and open the template in the editor.
 
             <div id="backup-collection-files-all"></div>
         </div>
-        <div id="backupcontent-start" class="backupcontent backupcontent-start">
+        <div id="backupcontent-register" class="backupcontent backupcontent-register">
+            <h1>Registration</h1>
+            <table>
+                <tr>
+                    <td>email</td>
+                    <td style="overflow: hidden"><input style="float: left" type="email" id="email">
+                        <span id="email_error" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
+                              style="float: left; display: none"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>password</td>
+                    <td style="overflow: hidden"><input type="password" id="new-password" style="float: left">
+                        <span id="password_error" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
+                              style="float: left; display: none"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>password confirm</td>
+                    <td style="overflow: hidden"><input type="password" id="password_confirm" style="float: left">
+                        <span id="password_confirm_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
+                              style="float: left; display: none"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>podio login</td>
+                    <td style="overflow: hidden"><input type="text" id="podio_login" style="float: left">
+                        <span id="podio_login_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
+                              style="float: left; display: none"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>podio password</td>
+                    <td style="overflow: hidden"><input type="password" id="podio_password" style="float: left">
+                        <span id="podio_password_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
+                              style="float: left; display: none"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><input type="button" id="register_go" value="Register"></td>
+                </tr>
+            </table>
+
+            <div id="dialog-success" title="Created User">
+                <p>Created new user.</p>
+            </div>
+
+        </div>
+        <div id="backupcontent-start" class="backupcontent backupcontent-start" style="display: none">
             <h1>Welcome</h1>
 
             <p>Browse backups in navigation.</p>
@@ -322,6 +375,12 @@ function computeUrl(node) {
     return url;
 }
 
+function postLogin() {
+    createNavigationTree();
+    $('.backupcontent').hide();
+    $('#backupcontent-start').show();
+}
+
 function createNavigationTree() {
     var jstree = $('#treeview').jstree({
         core: {
@@ -378,6 +437,15 @@ function createNavigationTree() {
                 break;
             case 2:
                 $('#backupcontent-backupiteration').show();
+
+                $.ajax({
+                    url: currententityurl,
+                    success: function (msg) {
+                        console.log('backup iteration metadata:');
+                        console.log(msg);
+                        $('#backup-iteration-status').text('Status: ' + msg['status']);
+                    }
+                });
 
                 loadFiles('#backup-iteration-files', currententityurl + '/files');
                 loadFiles('#backup-iteration-files-all', currententityurl + '/files?all=true');
@@ -470,7 +538,7 @@ jQuery(document).ready(function () {
             success: function (msg) {
                 $('#login').hide();
                 $('#logout').show();
-                createNavigationTree();
+                postLogin();
             },
             error: function (msg) {
                 console.log('auto login error');
@@ -512,6 +580,19 @@ jQuery(document).ready(function () {
     });
 
     $("#dialog-error").dialog({
+        autoOpen: false,
+        width: 400,
+        buttons: [
+            {
+                text: "Ok",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
+
+    $("#dialog-success").dialog({
         autoOpen: false,
         width: 400,
         buttons: [
@@ -600,7 +681,52 @@ jQuery(document).ready(function () {
                 $.cookie('podio_backup_login_session', msg['loginsession'], {expires: 7, path: '/'});
                 console.log('stored login session in cookie');
                 console.log(msg['loginsession']);
-                createNavigationTree();
+                postLogin();
+            }
+
+        });
+    });
+
+    $('#register_go').on('click', function () {
+        console.log('register click');
+        $('.ui-icon-alert').hide();
+        if (false) {
+            //TODO
+            regex = new RegExp('.+@.+\\..+');
+            //result = RegExp.apply($('#email').val().toString(), [regex]);
+
+            console.log(regex);
+            result = regex.apply($('#email').val().toString());
+            console.log(result);
+            $('#email').show("fast");
+            return;
+        }
+        if ($('#new-password').val() !== $('#password_confirm').val()) {
+            $('#password_confirm_invalid').show("fast");
+            return;
+        }
+        $.ajax({
+            url: '../register',
+            type: 'POST',
+            data: {
+                user: btoa($('#email').val()),
+                password: btoa($('#new-password').val()),
+                podioUser: btoa($('#podio_login').val()),
+                podioPassword: btoa($('#podio_password').val())
+            },
+            success: function (data, textStatus, jqXHR) {
+                console.log('user create success');
+                console.log('data')
+                console.log(data);
+                console.log('textStatus')
+                console.log(textStatus);
+                console.log(jqXHR);
+                $('#email').val('');
+                $('#new-password').val('');
+                $('#podio_login').val('');
+                $('#podio_password').val('');
+                $('#password_confirm').val('');
+                $("#dialog-success").dialog("open");
             }
 
         });
