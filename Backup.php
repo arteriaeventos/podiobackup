@@ -57,20 +57,15 @@ class Backup
         global $verbose;
         if ($verbose)
             echo "Space: " . $space->name . "\n";
-
-        $contactsFile = '';
+        $raw_result = array();
         try {
-            if ($space->name == "Employee Network")
-                $filter = array('contact_type' => 'user');
-            else
-                $filter = array('contact_type' => 'space');
-            $contacts = PodioFetchAll::iterateApiCall('PodioContact::get_for_space', $space->space_id, $filter);
-            $contactsFile .= contacts2text($contacts);
+            $contacts = PodioFetchAll::iterateApiCall('PodioContact::get_for_space', $space->space_id, array('type' => 'full', 'contact_type' => 'space,user'), 100, null, $raw_result);
         } catch (PodioError $e) {
             show_error($e);
-            $contactsFile .= "\n\nPodio Error:\n" . $e;
         }
-        $this->storage->store($contactsFile, 'podio_space_contacts.txt', $org->name, $space->name);
+        for ($i = 0; $i < sizeof($contacts); $i++) {
+            $this->storage->storePodioContact($contacts[$i], $raw_result[$i], $org->name, $space->name);
+        }
 
         try {
             $spaceFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_space', $space->space_id, array(), FILE_GET_FOR_APP_LIMIT);
@@ -127,8 +122,6 @@ class Backup
             echo "App: " . $app->config['name'] . "\n";
             echo "debug: MEMORY: " . memory_get_usage(true) . " | " . memory_get_usage(false) . "\n";
         }
-
-        $appFile = "";
 
         $appFiles = array();
 
@@ -187,11 +180,7 @@ class Backup
             }
         } catch (PodioError $e) {
             show_error($e);
-            $appFile .= "\n\nPodio Error:\n" . $e;
         }
-        $this->storage->storeFile($appFile, 'all_items_summary.txt', 'text/plain', NULL, NULL, $orgName, $spaceName, $appName);
-        unset($appFile);
-        unset($files_in_app_html);
     }
 
     /**

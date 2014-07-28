@@ -26,7 +26,7 @@ and open the template in the editor.
 </div>
 <div id="logout" style="display: none">
     <button id="logoutbutton">Logout</button>
-    <a href="javascript:$('.backupcontent').hide();$('#backupcontent-start').show();">Homepage</a>
+    <a href="javascript:showHomepage();">Homepage</a>
 </div>
 
 <div id="dialog-ajax-error" title="Error">
@@ -68,6 +68,12 @@ and open the template in the editor.
         </div>
         <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
             <h1>Space</h1>
+
+            <h2>Contacts</h2>
+
+            <div style="width: 500px">
+                <table id="space-contacts-table" class="display" cellspacing="0" width="100%"></table>
+            </div>
 
             <h2>Files</h2>
 
@@ -161,6 +167,8 @@ and open the template in the editor.
 
             <p>Browse backups in navigation.</p>
 
+            <div id="current-storage">Used storage:</div>
+
             <h2>Create new backup</h2>
 
             <div title="Create new backup">
@@ -211,6 +219,24 @@ function loadFiles(domId, url) {
             for (var i in msg) {
                 $(domId).append(renderFile(msg[i]) + ' ');
             }
+        }
+    });
+}
+
+function fileSizeSI(a, b, c, d, e) {
+    return (b = Math, c = b.log, d = 1e3, e = c(a) / c(d) | 0, a / b.pow(d, e)).toFixed(2)
+            + ' ' + (e ? 'kMGTPEZY'[--e] + 'B' : 'Bytes')
+}
+
+function showHomepage() {
+    $('.backupcontent').hide();
+    $('#backupcontent-start').show()
+    $.ajax({
+        url: '../account',
+        success: function (msg) {
+            console.log('account stats:');
+            console.log(msg);
+            $('#current-storage').text('Used storage: ' + fileSizeSI(msg['used_storage']));
         }
     });
 }
@@ -377,8 +403,7 @@ function computeUrl(node) {
 
 function postLogin() {
     createNavigationTree();
-    $('.backupcontent').hide();
-    $('#backupcontent-start').show();
+    showHomepage();
 }
 
 function createNavigationTree() {
@@ -412,9 +437,6 @@ function createNavigationTree() {
         console.log(currententityurl);
         console.log(currenturl);
         switch (data.node.parents.length) {
-            case 0:
-                $('#backupcontent-start').show();
-                break;
             case 1:
                 $('#backupcontent-backupcollection').show();
                 console.log('querying information using url: ' + currententityurl);
@@ -458,6 +480,19 @@ function createNavigationTree() {
                 break;
             case 4:
                 $('#backupcontent-space').show();
+
+                $('#space-contacts-table').dataTable({
+                    "destroy": true,
+                    "ajax": {
+                        "url": currententityurl + '/contacts',
+                        "dataSrc": ""
+                    },
+                    "columns": [
+                        {"data": "name", title: 'Name' },
+                        {"data": "link", title: 'Link'}
+                    ]
+                });
+
 
                 loadFiles('#backup-space-files', currententityurl + '/files');
                 loadFiles('#backup-space-files-all', currententityurl + '/files?all=true');

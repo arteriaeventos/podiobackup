@@ -1,6 +1,7 @@
 <?php
 
 require 'flight/flight/Flight.php';
+require_once 'Storage.php';
 
 /**
  *
@@ -239,6 +240,17 @@ Flight::route('GET /file(/.*)', function () {
     Flight::stop();
 });
 
+Flight::route('GET /account', function () {
+    $dbStats = getDbForUser()->command(array(
+        'dbStats' => 1,
+        'scale' => 1
+    ));
+    Flight::json(array(
+        'used_storage' => $dbStats['dataSize'],
+        'other_data' => $dbStats
+    ));
+});
+
 Flight::route('POST /register', function () {
     /* maybe use PUT + POST? */
     $user = base64_decode(Flight::request()->data['user']);
@@ -350,6 +362,28 @@ Flight::route('POST /backupcollection/@backupcollection', function ($backupcolle
     }
 });
 
+Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/contacts', function ($backupcollection, $backupiteration, $org, $space) {
+    $query = array(
+        DESCRIPTION => 'original contact',
+        ITERATION => $backupiteration,
+        ORG => $org,
+        SPACE => $space,
+    );
+
+    $collection = getDbForUser()->selectCollection($backupcollection);
+    $contacts = $collection->find($query);
+
+    error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
+
+    // $comments->sort(array('value.created_on' => 1));
+
+    $result = array_map(function ($element) {
+        return $element[VALUE];
+    }, iterator_to_array($contacts, false));
+
+    Flight::json($result);
+});
+
 Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/app/@app/item/count', function ($backupcollection, $backupiteration, $org, $space, $app) {
     $query = array(
         'description' => 'original item',
@@ -440,6 +474,59 @@ Flight::route('GET /backupcollection/@backupcollection(/backupiteration/@backupi
     error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
 
     Flight::json($result);
+});
+
+Flight::route('/backupcollection/@backupcollection/backupiteration/@backupiteration/org/@org/space/@space/app/@app/item(/@item)', function ($backupcollection, $backupiteration, $org, $space, $app, $item) {
+
+    if (is_null($item)) {
+        $query = array(
+            'description' => 'original item',
+            'backupId' => $backupiteration,
+            'organization' => $org,
+            'space' => $space,
+            'app' => $app
+        );
+
+        $collection = getDbForUser()->selectCollection($backupcollection);
+        $items = $collection->find($query);
+
+        $items->sort(array('_id' => 1)); //here we have an index for sure..
+        $count = Flight::request()->query['count'];
+        if (isset($count) && $count != null) {
+            $items->limit($count);
+        }
+        $start = Flight::request()->query['start'];
+        if (isset($start) && $start != null) {
+            $items->skip($start);
+        }
+
+        error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
+        error_log("fetching $count items. start=$start\n", 3, 'myphperror.log');
+        error_log("query result: " . var_export($items, true) . "\n", 3, 'myphperror.log');
+        $result = array();
+
+        foreach ($items as $item) {
+            array_push($result, $item['value']);
+        }
+        error_log("fetched " . sizeof($result) . " items.\n", 3, 'myphperror.log');
+        error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
+        Flight::json($result);
+    } else {
+        $query = array(
+            'description' => 'original item',
+            'backupId' => $backupiteration,
+            'organization' => $org,
+            'space' => $space,
+            'app' => $app,
+            'podioItemId' => intval($item)
+        );
+        $theItem = getDbForUser()->selectCollection($backupcollection)->findOne($query);
+        if (is_null($theItem)) {
+            Flight::halt('404', 'Item with id=' . $item . ' not found.');
+        } else {
+            Flight::json($theItem['value']);
+        }
+    }
 });
 
 Flight::start();

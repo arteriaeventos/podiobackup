@@ -9,6 +9,15 @@
 require_once 'podio-php/PodioAPI.php';
 require_once 'IStorage.php';
 
+/* storage element attributes: */
+define('PODIO_ID', 'podioItemId');
+define('APP', 'app');
+define('SPACE', 'space');
+define('ORG', 'organization');
+define('DESCRIPTION', 'description');
+define('ITERATION', 'backupId');
+define('VALUE', 'value');
+
 /**
  * Description of Storage
  *
@@ -46,8 +55,8 @@ class Storage implements IStorage
     {
         $this->collection->update(
             array(
-                'description' => 'backup iteration metadata',
-                'backupId' => $this->backupId),
+                DESCRIPTION => 'backup iteration metadata',
+                ITERATION => $this->backupId),
             array(
                 '$set' => array(
                     'value.status' => 'paused',
@@ -60,8 +69,8 @@ class Storage implements IStorage
     {
         $this->collection->update(
             array(
-                'description' => 'backup iteration metadata',
-                'backupId' => $this->backupId),
+                DESCRIPTION => 'backup iteration metadata',
+                ITERATION => $this->backupId),
             array(
                 '$set' => array('value.status' => 'running')
             ));
@@ -71,8 +80,8 @@ class Storage implements IStorage
     {
         $this->collection->update(
             array(
-                'description' => 'backup iteration metadata',
-                'backupId' => $this->backupId),
+                DESCRIPTION => 'backup iteration metadata',
+                ITERATION => $this->backupId),
             array(
                 '$set' => array(
                     'value.status' => 'finished',
@@ -114,12 +123,53 @@ class Storage implements IStorage
         return getMongo()->selectDB($dbname);
     }
 
+    function storePodioContact(PodioContact $contact, $raw_response, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
+    {
+        $query = array(ITERATION => $this->backupId, DESCRIPTION => 'original contact', PODIO_ID => $contact->profile_id);
+        $existing_contact = $this->collection->findOne($query);
+        if (is_null($existing_contact)) {
+            $new_item = array(
+                ITERATION => $this->backupId,
+                DESCRIPTION => 'original contact',
+                PODIO_ID => $contact->profile_id,
+                VALUE => $raw_response,
+                ORG => array(is_null($orgName) ? 'NULL' : $orgName),
+                SPACE => array(is_null($spaceName) ? 'NULL' : $spaceName),
+                APP => array(is_null($appName) ? 'NULL' : $appName)
+            );
+            $this->collection->insert($new_item);
+        } else {
+            $changed = false;
+            $attributes = array(
+                ORG => array(is_null($orgName) ? 'NULL' : $orgName),
+                SPACE => array(is_null($spaceName) ? 'NULL' : $spaceName),
+                APP => array(is_null($appName) ? 'NULL' : $appName)
+            );
+            foreach ($attributes as $key => $value) {
+                if (isset($existing_contact[$key])) {
+                    if (!in_array($value, $existing_contact[$key])) {
+                        array_push($existing_contact[$key], $value);
+                        $changed = true;
+                    }
+                } else {
+                    $existing_contact[$key] = array($value);
+                    $changed = true;
+                }
+            }
+            if ($changed) {
+                $this->collection->save($existing_contact);
+            }
+        }
+
+    }
+
+
     function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
         $metadata = array(
             'filename' => $filename,
-            'backupcollection' => $this->collectionname,
-            'backupId' => array($this->backupId),
+            'backupcollection' => array($this->collectionname),
+            ITERATION => array($this->backupId),
             'mimeType' => $mimeType);
 
         if (!is_null($originalUrl))
@@ -127,10 +177,10 @@ class Storage implements IStorage
         if (!is_null($podioFileId))
             $metadata['podioFileId'] = $podioFileId;
 
-        $metadata['organization'] = array(is_null($orgName) ? 'NULL' : $orgName);
-        $metadata['space'] = array(is_null($spaceName) ? 'NULL' : $spaceName);
-        $metadata['app'] = array(is_null($appName) ? 'NULL' : $appName);
-        $metadata['podioItemId'] = array(is_null($podioItemId) ? 'NULL' : $podioItemId);
+        $metadata[ORG] = array(is_null($orgName) ? 'NULL' : $orgName);
+        $metadata[SPACE] = array(is_null($spaceName) ? 'NULL' : $spaceName);
+        $metadata[APP] = array(is_null($appName) ? 'NULL' : $appName);
+        $metadata[PODIO_ID] = array(is_null($podioItemId) ? 'NULL' : $podioItemId);
 
         if (is_null($bytes)) {
             $metadata['external'] = true;
@@ -155,11 +205,12 @@ class Storage implements IStorage
             echo "DEBUG: Detected duplicate download for file: $file->file_id\n";
             $changed = false;
             $attributes = array(
-                'backupId' => $this->backupId,
-                'organization' => $orgName,
-                'space' => $spaceName,
-                'app' => $appName,
-                'podioItemId' => $podioItemId
+                'backupcollection' => $this->collectionname,
+                ITERATION => $this->backupId,
+                ORG => $orgName,
+                SPACE => $spaceName,
+                APP => $appName,
+                PODIO_ID => $podioItemId
             );
             foreach ($attributes as $key => $value) {
                 $realValue = is_null($value) ? 'NULL' : $value;
@@ -205,18 +256,18 @@ class Storage implements IStorage
     function store($value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
 
-        $item = array('backupId' => $this->backupId, 'value' => ((!is_string($value) && is_object($value)) ? serialize($value) : $value));
+        $item = array(ITERATION => $this->backupId, VALUE => ((!is_string($value) && is_object($value)) ? serialize($value) : $value));
 
         if (!is_null($description))
-            $item['description'] = $description;
+            $item[DESCRIPTION] = $description;
         if (!is_null($orgName))
-            $item['organization'] = $orgName;
+            $item[ORG] = $orgName;
         if (!is_null($spaceName))
-            $item['space'] = $spaceName;
+            $item[SPACE] = $spaceName;
         if (!is_null($appName))
-            $item['app'] = $appName;
+            $item[APP] = $appName;
         if (!is_null($podioItemId))
-            $item['podioItemId'] = $podioItemId;
+            $item[PODIO_ID] = $podioItemId;
 
         $this->collection->insert($item);
     }
