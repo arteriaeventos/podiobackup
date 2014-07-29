@@ -10,8 +10,12 @@ and open the template in the editor.
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
     <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
+    <link href="jquery-ui-1.11.0/jquery-ui.theme.css" rel="stylesheet">
     <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
     <link href="DataTables/media/css/jquery.dataTables.css" rel="stylesheet">
+    <!-- link href="Plugins/integration/jqueryui/dataTables.jqueryui.css" rel="stylesheet" -->
+    <!-- link href="ColVis/css/dataTables.colvis.jqueryui.css" rel="stylesheet" -->
+    <link href="ColVis/css/dataTables.colVis.css" rel="stylesheet">
     <link href="view-backup.css" rel="stylesheet">
 </head>
 <body>
@@ -71,7 +75,7 @@ and open the template in the editor.
 
             <h2>Contacts</h2>
 
-            <div style="width: 500px">
+            <div>
                 <table id="space-contacts-table" class="display" cellspacing="0" width="100%"></table>
             </div>
 
@@ -198,6 +202,8 @@ and open the template in the editor.
 <script src="jstree/dist/jstree.js"></script>
 <script src="jquery.cookie-1.4.1.min.js"></script>
 <script src="DataTables/media/js/jquery.dataTables.js"></script>
+<!-- script src="Plugins/integration/jqueryui/dataTables.jqueryui.js"></script -->
+<script src="ColVis/js/dataTables.colVis.js"></script>
 
 <script>
 
@@ -406,6 +412,29 @@ function postLogin() {
     showHomepage();
 }
 
+function renderArray(data) {
+    if (data === undefined) {
+        return '<i>empty</i>';
+    } else {
+        return data.join(', ');
+    }
+}
+
+function createLink(data) {
+    if (data === undefined) {
+        return '<i>empty</i>';
+    } else if (Array.isArray(data)) {
+        return data.map(function (entry) {
+            return createLink(entry);
+        }).join(', ');
+    } else {
+        if (data.indexOf('@') >= 0) {
+            return '<a href="mailto:' + data + '">' + data + '</a>';
+        } else {
+            return '<a target="_blank" href="' + data + '">' + data + '</a>';
+        }
+    }
+}
 function createNavigationTree() {
     var jstree = $('#treeview').jstree({
         core: {
@@ -481,18 +510,36 @@ function createNavigationTree() {
             case 4:
                 $('#backupcontent-space').show();
 
-                $('#space-contacts-table').dataTable({
+                var space_table = $('#space-contacts-table').dataTable({
                     "destroy": true,
+                    dom: 'C<"clear">lfrtip',
                     "ajax": {
                         "url": currententityurl + '/contacts',
                         "dataSrc": ""
                     },
+                    colVis: {
+                        restore: "Restore",
+                        showAll: "Show all",
+                        showNone: "Show none"
+                    },
                     "columns": [
-                        {"data": "name", title: 'Name' },
-                        {"data": "link", title: 'Link'}
+                        {data: 'name', title: 'Name'},
+                        {data: 'link', title: 'Link', visible: false, render: createLink},
+                        {data: 'mail', title: 'Email', render: createLink},
+                        {data: 'phone', title: 'Phone', render: renderArray},
+                        {data: 'type', title: 'Type', visible: false},
+                        {data: 'organization', title: 'Organization', visible: false, defaultContent: '<i>empty</i>'},
+                        {data: 'title', title: 'Title', visible: false, render: renderArray},
+                        {data: 'about', title: 'About', visible: false, defaultContent: '<i>empty</i>'},
+                        {data: 'address', title: 'Address', visible: false, render: renderArray},
+                        {data: 'city', title: 'City', visible: false, defaultContent: '<i>empty</i>'},
+                        {data: 'zip', title: 'ZIP', visible: false, defaultContent: '<i>empty</i>'},
+                        {data: 'state', title: 'State', visible: false, defaultContent: '<i>empty</i>'},
+                        {data: 'country', title: 'Country', visible: false, defaultContent: '<i>empty</i>'},
+                        {data: 'url', title: 'URL', visible: false, render: createLink}
+
                     ]
                 });
-
 
                 loadFiles('#backup-space-files', currententityurl + '/files');
                 loadFiles('#backup-space-files-all', currententityurl + '/files?all=true');
@@ -522,7 +569,7 @@ function createNavigationTree() {
                     "columns": [
                         {"data": "item_id", title: 'Podio ID' },
                         {"data": "title", title: 'Title' },
-                        {"data": "link", title: 'Link'},
+                        {"data": "link", title: 'Link', render: createLink},
                         {"data": "created_by.name", title: 'Created By'},
                         {"data": "created_on", title: 'Create Date'},
                         {"data": "last_event_on", title: 'Last Change'}

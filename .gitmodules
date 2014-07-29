@@ -10,3 +10,9 @@
 [submodule "view/DataTables"]
 	path = view/DataTables
 	url = https://github.com/DataTables/DataTables.git
+[submodule "view/ColVis"]
+	path = view/ColVis
+	url = https://github.com/DataTables/ColVis.git
+[submodule "view/Plugins"]
+	path = view/Plugins
+	url = https://github.com/DataTables/Plugins.git

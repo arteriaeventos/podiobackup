@@ -59,7 +59,12 @@ class Backup
             echo "Space: " . $space->name . "\n";
         $raw_result = array();
         try {
-            $contacts = PodioFetchAll::iterateApiCall('PodioContact::get_for_space', $space->space_id, array('type' => 'full', 'contact_type' => 'space,user'), 100, null, $raw_result);
+            $params = array(
+                'type' => 'full',
+                'contact_type' => 'space,user',
+                'exclude_self' => 'false'
+            );
+            $contacts = PodioFetchAll::iterateApiCall('PodioContact::get_for_space', $space->space_id, $params, 100, null, $raw_result);
         } catch (PodioError $e) {
             show_error($e);
         }
