@@ -12,10 +12,11 @@ and open the template in the editor.
     <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
     <link href="jquery-ui-1.11.0/jquery-ui.theme.css" rel="stylesheet">
     <link href="jstree/dist/themes/default/style.css" rel="stylesheet">
-    <link href="DataTables/media/css/jquery.dataTables.css" rel="stylesheet">
+    <!-- link href="DataTables/media/css/jquery.dataTables.css" rel="stylesheet" -->
+    <link href="DataTables/media/css/jquery.dataTables_themeroller.css" rel="stylesheet">
     <!-- link href="Plugins/integration/jqueryui/dataTables.jqueryui.css" rel="stylesheet" -->
-    <!-- link href="ColVis/css/dataTables.colvis.jqueryui.css" rel="stylesheet" -->
     <link href="ColVis/css/dataTables.colVis.css" rel="stylesheet">
+    <link href="ColVis/css/dataTables.colvis.jqueryui.css" rel="stylesheet">
     <link href="view-backup.css" rel="stylesheet">
 </head>
 <body>
@@ -195,14 +196,13 @@ and open the template in the editor.
         </div>
     </div>
 </div>
-<pre id="jsonoutput"></pre>
 
 <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
 <script src="jquery-ui-1.11.0/jquery-ui.js"></script>
 <script src="jstree/dist/jstree.js"></script>
 <script src="jquery.cookie-1.4.1.min.js"></script>
 <script src="DataTables/media/js/jquery.dataTables.js"></script>
-<!-- script src="Plugins/integration/jqueryui/dataTables.jqueryui.js"></script -->
+<script src="Plugins/integration/jqueryui/dataTables.jqueryui.js"></script>
 <script src="ColVis/js/dataTables.colVis.js"></script>
 
 <script>
@@ -512,15 +512,9 @@ function createNavigationTree() {
 
                 var space_table = $('#space-contacts-table').dataTable({
                     "destroy": true,
-                    dom: 'C<"clear">lfrtip',
                     "ajax": {
                         "url": currententityurl + '/contacts',
                         "dataSrc": ""
-                    },
-                    colVis: {
-                        restore: "Restore",
-                        showAll: "Show all",
-                        showNone: "Show none"
                     },
                     "columns": [
                         {data: 'name', title: 'Name'},
@@ -540,6 +534,14 @@ function createNavigationTree() {
 
                     ]
                 });
+
+                var colvis = new $.fn.dataTable.ColVis(space_table, {
+                    restore: "Restore",
+                    showAll: "Show all",
+                    showNone: "Show none"
+                });
+
+                $(colvis.button()).insertAfter('#space-contacts-table_filter');
 
                 loadFiles('#backup-space-files', currententityurl + '/files');
                 loadFiles('#backup-space-files-all', currententityurl + '/files?all=true');
