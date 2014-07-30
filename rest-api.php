@@ -194,6 +194,9 @@ Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@b
     } else if (is_null($app)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
         $apps = $collection->distinct('app', array('backupId' => $backupiteration, 'organization' => $org, 'space' => $space));
+        $apps = array_filter($apps, function ($arg) {
+            return $arg != 'NULL';
+        });
         foreach ($apps as $app) {
             array_push($result, array(
                 'text' => $app,

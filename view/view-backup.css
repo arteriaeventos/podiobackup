@@ -2,11 +2,7 @@
     float: left;
     padding: 10px;
     margin: 10px;
-    background-color: lightblue;
-    moz-border-radius: 10px;
-    webkit-border-radius: 10px;
-    border-radius: 10px; /* future proofing */
-    khtml-border-radius: 10px;
+    /*background-color: lightblue;*/
 }
 
 #currentcontent {
