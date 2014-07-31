@@ -31,11 +31,13 @@
 }
 
 .ui-widget-header {
-    margin-bottom: 3px
+    margin-bottom: 3px;
 }
 
 #header {
     margin-bottom: 5px;
+    margin-left: 300px;
+    padding-left: 10px;
 }
 
 .horizontal-middle {
@@ -47,5 +49,5 @@
 }
 
 body {
-    font: 100% "Trebuchet MS", sans-serif;
+    font: 80% "Trebuchet MS", sans-serif;
 }

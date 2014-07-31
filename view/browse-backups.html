@@ -6,7 +6,7 @@ and open the template in the editor.
 -->
 <html>
 <head>
-    <title>Browse Backups</title>
+    <title>Podio Cloud Backup</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
     <link href="jquery-ui-1.11.0/jquery-ui.css" rel="stylesheet">
@@ -23,195 +23,248 @@ and open the template in the editor.
 </head>
 <body>
 
-
 <div id="dialog-ajax-error" title="Error">
     <p>The following error occured:</p>
     <pre id="dialog-ajax-error-msg"></pre>
 </div>
 
 <div id="container">
-    <div id="header">
-        <img  class="horizontal-middle spacing" src="logo.png" width="200" height="40" alt="Logo: Podio Cloud Backup"/>
 
+<div id="navigationbar">
+    <div class="ui-widget-content ui-corner-all" style="margin-bottom: 3px; padding: 5px">
+        <img class="horizontal-middle spacing" src="logo.png" width="200" height="40"
+             alt="Logo: Podio Cloud Backup"/></div>
+    <div class="ui-widget-header ui-corner-all backup-menu" style="padding: 5px; display: none">Your Backups</div>
+    <div id="treeview" class="ui-widget-content ui-corner-all backup-menu" style="display: none"></div>
+</div>
+<div id="header">
         <span class="horizontal-middle spacing" id="login">
             <label for="username">Login</label>
             <input id="username" type="text"/>
             <label for="password">Password</label>
             <input id="password" type="password"/>
-            <button id="loginbutton">Login</button>
-            <a href="register.html">Register</a>
+            <button id="loginbutton" class="button">Login</button>
+            <a href="javascript:showPage('#backupcontent-register')">Register</a>
         </span>
 
         <span class="horizontal-middle spacing" id="logout" style="display: none;">
-            <button id="logoutbutton">Logout</button>
+            <button id="logoutbutton" class="button">Logout</button>
             <a href="javascript:showHomepage();">Home</a>
         </span>
+
+        <span id="page-links" class="horizontal-middle spacing">
+            <a class="spacing" href="javascript:showPage('#backupcontent-about')">About Podio Cloud Backup</a>
+            <a href="javascript:showPage('#backupcontent-impress')">Impressum</a>
+        </span>
+</div>
+<div id="currentcontent">
+<div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
+    <h1>App</h1>
+
+    <h2>Items</h2>
+    <table id="content-app" class="display" cellspacing="0" width="100%"></table>
+    <div id="content-app-pager"></div>
+
+    <h2 id="content-app-item-title">Selected Item</h2>
+
+    <table id="content-item-table" class="display" cellspacing="0" width="100%"></table>
+
+    <h2>Files</h2>
+
+    <div id="backup-app-files"></div>
+    <h2>All Files</h2>
+
+    <div id="backup-app-files-all"></div>
+</div>
+<div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
+    <h1>Organization</h1>
+
+    <h2>Files</h2>
+
+    <div id="backup-org-files"></div>
+    <h2>All Files</h2>
+
+    <div id="backup-org-files-all"></div>
+</div>
+<div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
+    <h1>Space</h1>
+
+    <h2>Contacts</h2>
+
+    <div>
+        <table id="space-contacts-table" class="display" cellspacing="0" width="100%"></table>
     </div>
-    <div id="navigationbar">
-        <div class="ui-widget-header ui-corner-all" style="padding: 5px">Your Backups</div>
-        <div id="treeview" class="ui-widget-content ui-corner-all"></div>
-    </div>
-    <div id="currentcontent">
-        <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
-            <h1>App</h1>
 
-            <h2>Items</h2>
-            <table id="content-app" class="display" cellspacing="0" width="100%"></table>
-            <div id="content-app-pager"></div>
+    <h2>Files</h2>
 
-            <h2 id="content-app-item-title">Selected Item</h2>
+    <div id="backup-space-files"></div>
+    <h2>All Files</h2>
 
-            <table id="content-item-table" class="display" cellspacing="0" width="100%"></table>
+    <div id="backup-space-files-all"></div>
+</div>
+<div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration"
+     style="display: none">
+    <h1>Backup Iteration</h1>
 
-            <h2>Files</h2>
+    <div id="backup-iteration-status">Status:</div>
 
-            <div id="backup-app-files"></div>
-            <h2>All Files</h2>
+    <h2>Files</h2>
 
-            <div id="backup-app-files-all"></div>
-        </div>
-        <div id="backupcontent-org" class="backupcontent backupcontent-org" style="display: none">
-            <h1>Organization</h1>
+    <div id="backup-iteration-files"></div>
+    <h2>All Files</h2>
 
-            <h2>Files</h2>
+    <div id="backup-iteration-files-all"></div>
+</div>
+<div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection"
+     style="display: none">
+    <h1>Backup Collection</h1>
 
-            <div id="backup-org-files"></div>
-            <h2>All Files</h2>
+    <div id="backup-collection-spaceid"></div>
+    <button id="run_backup_button"
+            title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run
+        Backup Iteration
+    </button>
+    <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
 
-            <div id="backup-org-files-all"></div>
-        </div>
-        <div id="backupcontent-space" class="backupcontent backupcontent-space" style="display: none">
-            <h1>Space</h1>
+    <h2>Files</h2>
 
-            <h2>Contacts</h2>
+    <div id="backup-collection-files"></div>
+    <h2>All Files</h2>
 
-            <div>
-                <table id="space-contacts-table" class="display" cellspacing="0" width="100%"></table>
-            </div>
-
-            <h2>Files</h2>
-
-            <div id="backup-space-files"></div>
-            <h2>All Files</h2>
-
-            <div id="backup-space-files-all"></div>
-        </div>
-        <div id="backupcontent-backupiteration" class="backupcontent backupcontent-backupiteration"
-             style="display: none">
-            <h1>Backup Iteration</h1>
-
-            <div id="backup-iteration-status">Status:</div>
-
-            <h2>Files</h2>
-
-            <div id="backup-iteration-files"></div>
-            <h2>All Files</h2>
-
-            <div id="backup-iteration-files-all"></div>
-        </div>
-        <div id="backupcontent-backupcollection" class="backupcontent backupcontent-backupcollection"
-             style="display: none">
-            <h1>Backup Collection</h1>
-
-            <div id="backup-collection-spaceid"></div>
-            <button id="run_backup_button"
-                    title="Starts creation of a new backup iteration (only possible if no backup is currently run)">Run
-                Backup Iteration
-            </button>
-            <button id="delete_backup_button" title="Deletes all backup iterations.">Delete</button>
-
-            <h2>Files</h2>
-
-            <div id="backup-collection-files"></div>
-            <h2>All Files</h2>
-
-            <div id="backup-collection-files-all"></div>
-        </div>
-        <div id="backupcontent-register" class="backupcontent backupcontent-register">
-            <h1>Registration</h1>
-            <table>
-                <tr>
-                    <td>email</td>
-                    <td style="overflow: hidden"><input style="float: left" type="email" id="email">
+    <div id="backup-collection-files-all"></div>
+</div>
+<div id="backupcontent-register" class="backupcontent backupcontent-register" style="display: none">
+    <h1>Registration</h1>
+    <table>
+        <tr>
+            <td>email</td>
+            <td style="overflow: hidden"><input style="float: left" type="email" id="email">
                         <span id="email_error" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
                               style="float: left; display: none"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>password</td>
-                    <td style="overflow: hidden"><input type="password" id="new-password" style="float: left">
+            </td>
+        </tr>
+        <tr>
+            <td>password</td>
+            <td style="overflow: hidden"><input type="password" id="new-password" style="float: left">
                         <span id="password_error" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
                               style="float: left; display: none"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>password confirm</td>
-                    <td style="overflow: hidden"><input type="password" id="password_confirm" style="float: left">
+            </td>
+        </tr>
+        <tr>
+            <td>password confirm</td>
+            <td style="overflow: hidden"><input type="password" id="password_confirm" style="float: left">
                         <span id="password_confirm_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
                               style="float: left; display: none"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>podio login</td>
-                    <td style="overflow: hidden"><input type="text" id="podio_login" style="float: left">
+            </td>
+        </tr>
+        <tr>
+            <td>podio login</td>
+            <td style="overflow: hidden"><input type="text" id="podio_login" style="float: left">
                         <span id="podio_login_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
                               style="float: left; display: none"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>podio password</td>
-                    <td style="overflow: hidden"><input type="password" id="podio_password" style="float: left">
+            </td>
+        </tr>
+        <tr>
+            <td>podio password</td>
+            <td style="overflow: hidden"><input type="password" id="podio_password" style="float: left">
                         <span id="podio_password_invalid" class="ui-state-default ui-corner-all ui-icon ui-icon-alert"
                               style="float: left; display: none"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td><input type="button" id="register_go" value="Register"></td>
-                </tr>
-            </table>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input type="button" id="register_go" value="Register"></td>
+        </tr>
+    </table>
 
-            <div id="dialog-success" title="Created User">
-                <p>Created new user.</p>
-            </div>
-
-        </div>
-        <div id="backupcontent-start" class="backupcontent backupcontent-start" style="display: none">
-            <h1>Welcome</h1>
-
-            <p>Browse backups in navigation.</p>
-
-            <h2>Used storage</h2>
-
-            <div id="account-storage">
-                <div class="horizontal-middle spacing" style="width: 100px; overflow: visible">
-                    <div id="used-storage-progress" style="float: left"></div>
-                    <div id="used-storage-extend"></div>
-                </div>
-                <span class="horizontal-middle" id="current-storage"></span>
-            </div>
-
-            <h2>Create new backup</h2>
-
-            <div title="Create new backup">
-                <table>
-                    <tr>
-                        <td><label for="create_backup_collection_name">Name</label></td>
-                        <td><input id="create_backup_collection_name" type="text" title="Name"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="create_backup_collection_space_id">Podio Space ID (optional)</label></td>
-                        <td><input id="create_backup_collection_space_id" type="text" title="Podio Space ID (optional)">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td><input type="button" value="Create" id="create_backup_collection_button"/></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
+    <div id="dialog-success" title="Created User">
+        <p>Created new user.</p>
     </div>
+
+</div>
+<div id="backupcontent-start" class="backupcontent backupcontent-start" style="display: none">
+    <h1>Home</h1>
+
+    <h2>Used storage</h2>
+
+    <div id="account-storage">
+        <div class="horizontal-middle spacing" style="width: 100px; overflow: visible">
+            <div id="used-storage-progress" style="float: left"></div>
+            <div id="used-storage-extend"></div>
+        </div>
+        <span class="horizontal-middle" id="current-storage"></span>
+    </div>
+
+    <h2>Create new backup</h2>
+
+    <div title="Create new backup">
+        <table>
+            <tr>
+                <td><label for="create_backup_collection_name">Name</label></td>
+                <td><input id="create_backup_collection_name" type="text" title="Name"></td>
+            </tr>
+            <tr>
+                <td><label for="create_backup_collection_space_id">Podio Space ID (optional)</label></td>
+                <td><input id="create_backup_collection_space_id" type="text" title="Podio Space ID (optional)">
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="button" value="Create" id="create_backup_collection_button"/></td>
+            </tr>
+        </table>
+    </div>
+</div>
+<div id="backupcontent-impress" class="backupcontent backupcontent-impress" style="display: none">
+    <h1>TODO</h1>
+</div>
+<div id="backupcontent-about" class="backupcontent backupcontent-about">
+    <h1>Podio Cloud Backup</h1>
+    is a disaster backup for your data stored at <a href="https://www.podio.com" target="_blank">podio.com</a>. Your
+    backups
+    is stored independently
+    from Podio and hence can be accessed even if all Podio infrastructure or service fails.
+
+    <h2>Why bothering?</h2>
+
+    <p>We belive that Podio is doing a very good job keeping your data accessible. But we belive even more in a
+        redundant
+        independent backup.
+
+    <p>If you have critical data stored
+        at Podio (e.g. billing or contact information) it may damage your business badly if Podio is for some reason not
+        accessible. For these cases you could access your data via Podio Cloud Backup.
+
+    <h2>What are the features?</h2>
+    <ul>
+        <li>Completely independent from Podio (Podio is only contacted for fetching the backups)</li>
+        <li>Easy to use web frontend</li>
+        <li>Apps/Items</li>
+        <ul>
+            <li>Items are stored in native format</li>
+            <li>All comments at items are stored</li>
+            <li>All items are stored additionally as their Excel export</li>
+        </ul>
+        <li>Files</li>
+        <ul>
+            <li>Stores all files uploaded to Podio</li>
+            <li>Links files stored at other providers (<a href="https://www.dropbox.com ">dropbox.com</a>, ...) for easy
+                access
+            </li>
+        </ul>
+        <li>Automatic/Scheduled backups (coming soon)</li>
+    </ul>
+
+    <h2>Can I try?</h2>
+    Yes, please! <a href="javascript:showPage('#backupcontent-register')">Register</a> and play around with 100 MB free
+    backups.
+
+    <h2>How can I provide feedback?</h2>
+    As this site is currently in beta-phase, there is still ongoing development. Of course any feedback, bugreports or
+    feature requests is very welcome and can be provided via email: <a
+        href="mailto:daniel-schreiber@gmx.de?subject=Podio Cloud Backup">daniel-schreiber@gmx.de</a>
+</div>
+</div>
 </div>
 
 <script src="jquery-ui-1.11.0/external/jquery/jquery.js"></script>
@@ -258,6 +311,21 @@ function addColVis(tableId) {
 function fileSize(a, b, c, d, e) {
     return (b = Math, c = b.log, d = 1024, e = c(a) / c(d) | 0, a / b.pow(d, e)).toFixed(2)
             + ' ' + (e ? 'KMGTPEZY'[--e] + 'B' : 'Bytes')
+}
+
+function showPage(pageId) {
+    $('.backupcontent').hide();
+    $(pageId).show()
+}
+
+function showRegister() {
+
+    $('#backupcontent-register').show()
+}
+
+function showAbout() {
+    $('.backupcontent').hide();
+    $('#backupcontent-about').show()
 }
 
 function showHomepage() {
@@ -457,6 +525,7 @@ function computeUrl(node) {
 function postLogin() {
     createNavigationTree();
     showHomepage();
+    $('.backup-menu').show('fast');
 }
 
 function renderArray(data) {
@@ -636,6 +705,8 @@ function createNavigationTree() {
 
 jQuery(document).ready(function () {
 
+    $('.button').button();
+
     $(document).ajaxSend(function (event, jqXHR, ajaxOptions) {
         if (typeof loginsession !== 'undefined') {
             jqXHR.setRequestHeader('PhpBackupLoginSession', loginsession);
@@ -646,18 +717,6 @@ jQuery(document).ready(function () {
         } else {
             console.log('no login information found.');
         }
-    });
-
-    $.ajaxPrefilter(function (options) {
-        console.log('ajaxPrefilter');
-        console.log(options);
-        options.error = function (msg) {
-            console.log('error on ajax call:');
-            console.log(msg);
-            $('#dialog-ajax-error-msg').text(msg['responseText']);
-            $('#dialog-ajax-error').dialog('open');
-        };
-
     });
 
     var logincookie = $.cookie('podio_backup_login_session');
@@ -675,10 +734,22 @@ jQuery(document).ready(function () {
                 console.log('auto login error');
                 console.log(loginsession);
                 console.log(msg);
-                $('#login').show();
+                $.removeCookie('podio_backup_login_session', {path: '/'});
             }
         })
     }
+
+    $.ajaxPrefilter(function (options) {
+        console.log('ajaxPrefilter');
+        console.log(options);
+        options.error = function (msg) {
+            console.log('error on ajax call:');
+            console.log(msg);
+            $('#dialog-ajax-error-msg').text(msg['responseText']);
+            $('#dialog-ajax-error').dialog('open');
+        };
+
+    });
 
 
     $('#content-app')
@@ -821,17 +892,17 @@ jQuery(document).ready(function () {
     $('#register_go').on('click', function () {
         console.log('register click');
         $('.ui-icon-alert').hide();
-        if (false) {
-            //TODO
-            regex = new RegExp('.+@.+\\..+');
-            //result = RegExp.apply($('#email').val().toString(), [regex]);
+        /*if (false) {
+         //TODO
+         regex = new RegExp('.+@.+\\..+');
+         //result = RegExp.apply($('#email').val().toString(), [regex]);
 
-            console.log(regex);
-            result = regex.apply($('#email').val().toString());
-            console.log(result);
-            $('#email').show("fast");
-            return;
-        }
+         console.log(regex);
+         result = regex.apply($('#email').val().toString());
+         console.log(result);
+         $('#email').show("fast");
+         return;
+         }*/
         if ($('#new-password').val() !== $('#password_confirm').val()) {
             $('#password_confirm_invalid').show("fast");
             return;
@@ -863,10 +934,7 @@ jQuery(document).ready(function () {
         });
     });
 
-})
-;
-
-
+});
 </script>
 </body>
 </html>

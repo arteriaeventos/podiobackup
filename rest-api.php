@@ -84,7 +84,7 @@ function getUser($useCookie = false)
             Flight::halt(401, 'no credentials provided.');
         }
         if (is_null($user)) {
-            Flight::halt(401, 'session not found.');
+            Flight::halt(401, 'user/session not found.');
         }
     }
     return $user;
