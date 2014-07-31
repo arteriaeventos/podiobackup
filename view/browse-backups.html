@@ -18,30 +18,39 @@ and open the template in the editor.
     <link href="ColVis/css/dataTables.colVis.css" rel="stylesheet">
     <link href="ColVis/css/dataTables.colvis.jqueryui.css" rel="stylesheet">
     <link href="view-backup.css" rel="stylesheet">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon"/>
 </head>
 <body>
 
-<div id="login">
-    <label for="username">Login</label>
-    <input id="username" type="text"/>
-    <label for="password">Password</label>
-    <input id="password" type="password"/>
-    <button id="loginbutton">Login</button>
-    <a href="register.html">Register</a>
-</div>
-<div id="logout" style="display: none">
-    <button id="logoutbutton">Logout</button>
-    <a href="javascript:showHomepage();">Homepage</a>
-</div>
 
 <div id="dialog-ajax-error" title="Error">
     <p>The following error occured:</p>
     <pre id="dialog-ajax-error-msg"></pre>
 </div>
 
+<div style="padding: 20px; width: 100%">
+    <div id="header">
+        <img src="logo.png" width="200" height="40" alt="Logo: Podio Cloud Backup"/>
 
-<div style="padding: 20px">
-    <div id="treeview" class="ui-widget-content ui-corner-all"></div>
+        <span id="login">
+            <label for="username">Login</label>
+            <input id="username" type="text"/>
+            <label for="password">Password</label>
+            <input id="password" type="password"/>
+            <button id="loginbutton">Login</button>
+            <a href="register.html">Register</a>
+        </span>
+
+        <span id="logout" style="display: none;">
+            <button id="logoutbutton">Logout</button>
+            <a href="javascript:showHomepage();">Home</a>
+        </span>
+    </div>
+    <div id="navigationbar">
+        <div class="ui-widget-header ui-corner-all" style="padding: 5px">Your Backups</div>
+        <div id="treeview" class="ui-widget-content ui-corner-all"></div>
+    </div>
     <div id="currentcontent">
         <div id="backupcontent-app" class="backupcontent backupcontent-app" style="display: none">
             <h1>App</h1>
@@ -172,7 +181,14 @@ and open the template in the editor.
 
             <p>Browse backups in navigation.</p>
 
-            <div id="current-storage">Used storage:</div>
+            <h2>Used storage</h2>
+            <div id="account-storage">
+                <div style="width: 100px; overflow: visible">
+                    <div id="used-storage-progress" style="float: left"></div>
+                    <div id="used-storage-extend"></div>
+                </div>
+                <span id="current-storage"></span>
+            </div>
 
             <h2>Create new backup</h2>
 
@@ -229,9 +245,9 @@ function loadFiles(domId, url) {
     });
 }
 
-function fileSize(a,b,c,d,e){
-    return (b=Math,c=b.log,d=1024,e=c(a)/c(d)|0,a/b.pow(d,e)).toFixed(2)
-            +' '+(e?'KMGTPEZY'[--e]+'B':'Bytes')
+function fileSize(a, b, c, d, e) {
+    return (b = Math, c = b.log, d = 1024, e = c(a) / c(d) | 0, a / b.pow(d, e)).toFixed(2)
+            + ' ' + (e ? 'KMGTPEZY'[--e] + 'B' : 'Bytes')
 }
 
 function showHomepage() {
@@ -242,7 +258,28 @@ function showHomepage() {
         success: function (msg) {
             console.log('account stats:');
             console.log(msg);
-            $('#current-storage').text('Used storage: ' + fileSize(msg['used_storage']) + ' / ' + fileSize(msg['max_storage']));
+            $('#current-storage').text(fileSize(msg['used_storage']) + ' / ' + fileSize(msg['max_storage']));
+            $('#used-storage-progress').progressbar({
+                max: msg['max_storage'],
+                value: msg['used_storage']
+            });
+            if (msg['max_storage'] < msg['used_storage']) {
+                $('#used-storage-extend').progressbar({
+                    max: msg['used_storage'] - msg['max_storage'],
+                    value: msg['used_storage'] - msg['max_storage']
+                });
+                var total = msg['used_storage'];
+                // "-2" for rounded corners? (they take 2 extra pixels..)
+                var storageWidth = "" + Math.floor(100 * msg['max_storage'] / total) - 2 + "px";
+                var extendWidth = "" + Math.floor(100 * (msg['used_storage'] - msg['max_storage']) / total) - 2 + "px";
+                console.log('progress bar widths:');
+                console.log(storageWidth);
+                console.log(extendWidth);
+                $('#used-storage-extend').css("width", extendWidth);
+                $('#used-storage-progress').css("width", storageWidth);
+            } else {
+                $('#used-storage-progress').css("width", '100px');
+            }
         }
     });
 }
@@ -512,6 +549,10 @@ function createNavigationTree() {
 
                 var space_table = $('#space-contacts-table').dataTable({
                     "destroy": true,
+                    /*sDom: '<""lfr>t<"F"ip>',*/
+                    /*sDom: '<"fg-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"'+
+                     'lfr>t<"fg-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix"'+
+                     'ip>',*/
                     "ajax": {
                         "url": currententityurl + '/contacts',
                         "dataSrc": ""

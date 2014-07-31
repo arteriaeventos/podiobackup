@@ -1,11 +1,46 @@
 #treeview {
-    float: left;
+    /*float: left;
     padding: 10px;
     margin: 10px;
+    */
     /*background-color: lightblue;*/
 }
 
+#navigationbar {
+    /*float: left;*/
+    position: absolute;
+    border-color: green;
+    border: 1px;
+    width: 300px;
+}
+
 #currentcontent {
-    margin: 10px;
-    padding: 10px
+    margin-left: 300px;
+}
+
+#used-storage-extend .ui-progressbar-value {
+    background-color: red !important;
+    background-image: none !important;
+}
+
+.ui-widget-header {
+    margin-bottom: 3px
+}
+
+#header {
+    margin-bottom: 5px;
+}
+
+#header span, img {
+    vertical-align: middle;
+    padding-right: 10px;
+}
+
+#account-storage span,div {
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+body {
+    font: 100% "Trebuchet MS", sans-serif;
 }
