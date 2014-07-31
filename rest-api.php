@@ -48,6 +48,7 @@ function getUserCollection()
     return getMongo()->selectDB('application')->selectCollection('users');
 }
 
+
 /**
  *  returns user or sends http error if user is not found/authorized
  * @global type $user
@@ -164,6 +165,7 @@ Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@b
     } else if (is_null($backupiteration)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
         $backups = $collection->distinct('backupId');
+        $backups = array_merge($backups, getDbForUser()->getGridFS()->distinct('backupId'));
         foreach ($backups as $backup) {
             array_push($result, array(
                 'text' => $backup,
@@ -248,8 +250,10 @@ Flight::route('GET /account', function () {
         'dbStats' => 1,
         'scale' => 1
     ));
+    $account = getMongo()->selectDB('application')->selectCollection('accounts')->findOne(array('account' => getUser()['db']));
     Flight::json(array(
         'used_storage' => $dbStats['dataSize'],
+        'max_storage' => is_null($account) ? null : $account['maxStorage'],
         'other_data' => $dbStats
     ));
 });
@@ -264,13 +268,24 @@ Flight::route('POST /register', function () {
     error_log("\nregistering user: $user with password: $password\n", 3, 'myphperror.log');
 
     if (is_null(getUserCollection()->findOne(array('user' => $user)))) {
+        $userDbName = createUserDbName($user);
         getUserCollection()->save(array(
             'user' => $user,
             'password' => $password,
             'podioUser' => $podioUser,
             'podioPassword' => $podioPassword,
             'balance' => 0,
-            'db' => createUserDbName($user)
+            'db' => $userDbName
+        ));
+        $maxStorageBytes = 10 * 1024 * 1024; //100MB
+        getMongo()->selectDB('application')->selectCollection('accounts')->save(array(
+            DESCRIPTION => 'account',
+            'podioUser' => $podioUser,
+            'podioPassword' => $podioPassword,
+            'balance' => 0,
+            'maxStorage' => $maxStorageBytes,
+            'maxStorage_humanized' => '100MB',
+            'account' => $userDbName
         ));
     } else {
         Flight::halt(409, 'user name exists.');

@@ -229,9 +229,9 @@ function loadFiles(domId, url) {
     });
 }
 
-function fileSizeSI(a, b, c, d, e) {
-    return (b = Math, c = b.log, d = 1e3, e = c(a) / c(d) | 0, a / b.pow(d, e)).toFixed(2)
-            + ' ' + (e ? 'kMGTPEZY'[--e] + 'B' : 'Bytes')
+function fileSize(a,b,c,d,e){
+    return (b=Math,c=b.log,d=1024,e=c(a)/c(d)|0,a/b.pow(d,e)).toFixed(2)
+            +' '+(e?'KMGTPEZY'[--e]+'B':'Bytes')
 }
 
 function showHomepage() {
@@ -242,7 +242,7 @@ function showHomepage() {
         success: function (msg) {
             console.log('account stats:');
             console.log(msg);
-            $('#current-storage').text('Used storage: ' + fileSizeSI(msg['used_storage']));
+            $('#current-storage').text('Used storage: ' + fileSize(msg['used_storage']) + ' / ' + fileSize(msg['max_storage']));
         }
     });
 }

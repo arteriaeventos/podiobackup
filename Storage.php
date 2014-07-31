@@ -31,6 +31,8 @@ class Storage implements IStorage
     private $collection;
     private $fs;
     private $backupId;
+    private $account;
+    private $doCheckDbSize = true;
 
     function __construct($dbname, $collection, $backupId)
     {
@@ -41,14 +43,18 @@ class Storage implements IStorage
         $this->fs = $this->db->getGridFS();
         $this->collection = $this->db->selectCollection($this->collectionname);
         $this->backupId = $backupId;
+        $this->account = self::getMongo()->selectDB('application')->selectCollection('accounts')->findOne(array('account' => $dbname));
     }
 
     function start()
     {
+
+        $this->doCheckDbSize = false;
         $this->store(array(
             'time_start' => new DateTime(),
             'status' => 'running'
         ), 'backup iteration metadata');
+        $this->doCheckDbSize = true;
     }
 
     function pause_start()
@@ -99,13 +105,9 @@ class Storage implements IStorage
     {
         global $mongo;
         if (!isset($mongo) || is_null($mongo)) {
-            $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
-            if ($dbhost != false) {
-                $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
-                $user = "admin";
-                $password = "IZ7ZCYaV8KrM";
-
-                $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
+            $dburl = getenv('OPENSHIFT_MONGODB_DB_URL');
+            if ($dburl != false) {
+                $mongo = new MongoClient($dburl);
             } else {
                 $mongo = new MongoClient();
             }
@@ -113,18 +115,37 @@ class Storage implements IStorage
         return $mongo;
     }
 
-    /**
-     *
-     * @return MongoDB
-     */
-    public static function getMongoDb()
+    function checkDbSize()
     {
-        $dbname = 'php';
-        return getMongo()->selectDB($dbname);
+        echo "-->checkDbSize\n";
+        if ($this->doCheckDbSize && !is_null($this->account)) {
+            $maxStorage = $this->account['maxStorage'];
+            $dbStats = $this->db->command(array(
+                'dbStats' => 1,
+                'scale' => 1
+            ));
+            if ($dbStats['dataSize'] > $maxStorage) {
+                $this->collection->update(
+                    array(
+                        DESCRIPTION => 'backup iteration metadata',
+                        ITERATION => $this->backupId),
+                    array(
+                        '$set' => array(
+                            'value.status' => 'cancelled: no space left.',
+                            'value.time_end' => new DateTime()
+                        )
+                    ));
+                $this->doCheckDbSize = false;
+                $this->storeFile("backup cancelled, as no more space is left. please upgrade account.\n", 'error.txt', 'text/text');
+                $this->doCheckDbSize = true;
+                exit("no space left! maxStorage=$maxStorage, dbStats['dataSize']=" . $dbStats['dataSize']);
+            }
+        }
     }
 
     function storePodioContact(PodioContact $contact, $raw_response, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
+        $this->checkDbSize();
         $query = array(ITERATION => $this->backupId, DESCRIPTION => 'original contact', PODIO_ID => $contact->profile_id);
         $existing_contact = $this->collection->findOne($query);
         if (is_null($existing_contact)) {
@@ -166,6 +187,7 @@ class Storage implements IStorage
 
     function storeFile($bytes, $filename, $mimeType, $originalUrl = NULL, $podioFileId = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
+        $this->checkDbSize();
         $metadata = array(
             'filename' => $filename,
             'backupcollection' => array($this->collectionname),
@@ -195,6 +217,7 @@ class Storage implements IStorage
 
     function storePodioFile(PodioFile $file, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
+        $this->checkDbSize();
         echo "storing file $file->name\n";
         #var_dump($file);
         $link = $file->link;
@@ -255,6 +278,7 @@ class Storage implements IStorage
 
     function store($value, $description = NULL, $orgName = NULL, $spaceName = NULL, $appName = NULL, $podioItemId = NULL)
     {
+        $this->checkDbSize();
 
         $item = array(ITERATION => $this->backupId, VALUE => ((!is_string($value) && is_object($value)) ? serialize($value) : $value));
 
