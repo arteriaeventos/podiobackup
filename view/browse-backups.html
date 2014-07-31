@@ -29,11 +29,11 @@ and open the template in the editor.
     <pre id="dialog-ajax-error-msg"></pre>
 </div>
 
-<div style="padding: 20px; width: 100%">
+<div id="container">
     <div id="header">
-        <img src="logo.png" width="200" height="40" alt="Logo: Podio Cloud Backup"/>
+        <img  class="horizontal-middle spacing" src="logo.png" width="200" height="40" alt="Logo: Podio Cloud Backup"/>
 
-        <span id="login">
+        <span class="horizontal-middle spacing" id="login">
             <label for="username">Login</label>
             <input id="username" type="text"/>
             <label for="password">Password</label>
@@ -42,7 +42,7 @@ and open the template in the editor.
             <a href="register.html">Register</a>
         </span>
 
-        <span id="logout" style="display: none;">
+        <span class="horizontal-middle spacing" id="logout" style="display: none;">
             <button id="logoutbutton">Logout</button>
             <a href="javascript:showHomepage();">Home</a>
         </span>
@@ -182,12 +182,13 @@ and open the template in the editor.
             <p>Browse backups in navigation.</p>
 
             <h2>Used storage</h2>
+
             <div id="account-storage">
-                <div style="width: 100px; overflow: visible">
+                <div class="horizontal-middle spacing" style="width: 100px; overflow: visible">
                     <div id="used-storage-progress" style="float: left"></div>
                     <div id="used-storage-extend"></div>
                 </div>
-                <span id="current-storage"></span>
+                <span class="horizontal-middle" id="current-storage"></span>
             </div>
 
             <h2>Create new backup</h2>
@@ -243,6 +244,15 @@ function loadFiles(domId, url) {
             }
         }
     });
+}
+
+function addColVis(tableId) {
+    var colvis = new $.fn.dataTable.ColVis($(tableId).dataTable().api(), {
+        restore: "Restore",
+        showAll: "Show all",
+        showNone: "Show none"
+    });
+    $(colvis.button()).insertAfter(tableId + '_filter');
 }
 
 function fileSize(a, b, c, d, e) {
@@ -547,7 +557,7 @@ function createNavigationTree() {
             case 4:
                 $('#backupcontent-space').show();
 
-                var space_table = $('#space-contacts-table').dataTable({
+                $('#space-contacts-table').dataTable({
                     "destroy": true,
                     /*sDom: '<""lfr>t<"F"ip>',*/
                     /*sDom: '<"fg-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"'+
@@ -576,13 +586,8 @@ function createNavigationTree() {
                     ]
                 });
 
-                var colvis = new $.fn.dataTable.ColVis(space_table, {
-                    restore: "Restore",
-                    showAll: "Show all",
-                    showNone: "Show none"
-                });
-
-                $(colvis.button()).insertAfter('#space-contacts-table_filter');
+                var tableId = '#space-contacts-table';
+                addColVis(tableId);
 
                 loadFiles('#backup-space-files', currententityurl + '/files');
                 loadFiles('#backup-space-files-all', currententityurl + '/files?all=true');
@@ -601,8 +606,8 @@ function createNavigationTree() {
                                 {"title": "Value(s)"}
                             ]
                         }
-                )
-                ;
+                );
+                addColVis('#content-item-table');
                 $('#content-app').dataTable({
                     "destroy": true,
                     "ajax": {
@@ -618,6 +623,7 @@ function createNavigationTree() {
                         {"data": "last_event_on", title: 'Last Change'}
                     ]
                 });
+                addColVis('#content-app');
 
 
                 break;

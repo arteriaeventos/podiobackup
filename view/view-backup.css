@@ -6,6 +6,11 @@
     /*background-color: lightblue;*/
 }
 
+#container {
+    margin: 10px;
+    width: 100%;
+}
+
 #navigationbar {
     /*float: left;*/
     position: absolute;
@@ -16,6 +21,8 @@
 
 #currentcontent {
     margin-left: 300px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 #used-storage-extend .ui-progressbar-value {
@@ -31,14 +38,12 @@
     margin-bottom: 5px;
 }
 
-#header span, img {
+.horizontal-middle {
     vertical-align: middle;
-    padding-right: 10px;
 }
 
-#account-storage span,div {
-    vertical-align: middle;
-    margin-right: 10px;
+.spacing {
+    padding-right: 10px;
 }
 
 body {
