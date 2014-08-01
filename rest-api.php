@@ -118,13 +118,17 @@ function isBackupRunning($backupcollection)
     return false;
 }
 
+/**
+ * @param array $array
+ * @return array flat unique array
+ */
 function flatten(array $array)
 {
     $return = array();
     array_walk_recursive($array, function ($a) use (&$return) {
         array_push($return, $a);
     });
-    return $return;
+    return array_unique($return);
 }
 
 function filterNULL(array $array)
