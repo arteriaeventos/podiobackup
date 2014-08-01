@@ -118,6 +118,22 @@ function isBackupRunning($backupcollection)
     return false;
 }
 
+function flatten(array $array)
+{
+    $return = array();
+    array_walk_recursive($array, function ($a) use (&$return) {
+        array_push($return, $a);
+    });
+    return $return;
+}
+
+function filterNULL(array $array)
+{
+    return array_filter($array, function ($elem) {
+        return 'NULL' != $elem;
+    });
+}
+
 Flight::set('flight.log_errors', true);
 
 Flight::route('/login', function () {
@@ -164,8 +180,9 @@ Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@b
 
     } else if (is_null($backupiteration)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
-        $backups = $collection->distinct('backupId');
-        $backups = array_merge($backups, getDbForUser()->getGridFS()->distinct('backupId'));
+        $backups = flatten($collection->distinct('backupId'));
+        $backups = filterNULL(array_merge($backups, flatten(getDbForUser()->getGridFS()->distinct('backupId'))));
+
         foreach ($backups as $backup) {
             array_push($result, array(
                 'text' => $backup,
@@ -175,7 +192,7 @@ Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@b
 
     } else if (is_null($org)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
-        $orgs = $collection->distinct('organization', array('backupId' => $backupiteration));
+        $orgs = filterNULL(flatten($collection->distinct('organization', array('backupId' => $backupiteration))));
         foreach ($orgs as $org) {
             array_push($result, array(
                 'text' => $org,
@@ -185,7 +202,7 @@ Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@b
 
     } else if (is_null($space)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
-        $spaces = $collection->distinct('space', array('backupId' => $backupiteration, 'organization' => $org));
+        $spaces = filterNULL(flatten($collection->distinct('space', array('backupId' => $backupiteration, 'organization' => $org))));
         foreach ($spaces as $space) {
             array_push($result, array(
                 'text' => $space,
@@ -195,10 +212,7 @@ Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@b
 
     } else if (is_null($app)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
-        $apps = $collection->distinct('app', array('backupId' => $backupiteration, 'organization' => $org, 'space' => $space));
-        $apps = array_filter($apps, function ($arg) {
-            return $arg != 'NULL';
-        });
+        $apps = filterNULL(flatten($collection->distinct('app', array('backupId' => $backupiteration, 'organization' => $org, 'space' => $space))));
         foreach ($apps as $app) {
             array_push($result, array(
                 'text' => $app,
