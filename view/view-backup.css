@@ -25,6 +25,10 @@
     padding-right: 10px;
 }
 
+#backupcontent-about {
+    margin-right: 300px;
+}
+
 #used-storage-extend .ui-progressbar-value {
     background-color: red !important;
     background-image: none !important;

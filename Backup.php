@@ -37,15 +37,15 @@ class Backup
         if ($verbose)
             echo "Org: " . $org->name . "\n";
 
-        $contactsFile = '';
         try {
-            $contacts = PodioFetchAll::iterateApiCall('PodioContact::get_for_org', $org->org_id);
-            $contactsFile .= contacts2text($contacts);
+            PodioFetchAll::foreachItem('PodioContact::get_for_org', $org->org_id, array(), 100, null,
+                function ($contact, $raw) use ($org) {
+                    //TODO add view for org contacts
+                    $this->storage->storePodioContact($contact, $raw, $org->name);
+                });
         } catch (PodioError $e) {
             show_error($e);
-            $contactsFile .= "\n\nPodio Error:\n" . $e;
         }
-        $this->storage->storeFile($contactsFile, 'podio_organization_contacts.txt', 'text/plain', NULL, NULL, $org->name);
 
         foreach ($org->spaces as $space) { // space_id
             $this->backup_space($space, $org);
@@ -64,26 +64,20 @@ class Backup
                 'contact_type' => 'space,user',
                 'exclude_self' => 'false'
             );
-            $contacts = PodioFetchAll::iterateApiCall('PodioContact::get_for_space', $space->space_id, $params, 100, null, $raw_result);
+            $contacts = PodioFetchAll::foreachItem('PodioContact::get_for_space', $space->space_id, $params, 100, null,
+                function ($contact, $raw) use ($org, $space) {
+                    $this->storage->storePodioContact($contact, $raw, $org->name, $space->name);
+                });
         } catch (PodioError $e) {
             show_error($e);
         }
-        for ($i = 0; $i < sizeof($contacts); $i++) {
-            $this->storage->storePodioContact($contacts[$i], $raw_result[$i], $org->name, $space->name);
-        }
 
         try {
-            $spaceFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_space', $space->space_id, array(), FILE_GET_FOR_APP_LIMIT);
-            echo "space files: " . sizeof($spaceFiles) . "\n";
-            #var_dump($appFiles);
-            PodioFetchAll::flattenObjectsArray($spaceFiles, PodioFetchAll::podioElements(
-                array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
-                    'context' => array('id' => NULL, 'type' => null, 'title' => null))));
-            if ($verbose)
-                echo "fetched information for " . sizeof($spaceFiles) . " files in space.\n";
-            foreach ($spaceFiles as $file) {
-                $this->storage->storePodioFile($file, $org->name, $space->name);
-            }
+            $spaceFiles = PodioFetchAll::foreachItem('PodioFile::get_for_space', $space->space_id, array(), FILE_GET_FOR_APP_LIMIT, null,
+                function ($file, $raw) use ($org, $space) {
+                    $this->storage->storePodioFile($file, $org->name, $space->name);
+                });
+            echo "space files: " . $spaceFiles . "\n";
         } catch (PodioError $e) {
             show_error($e);
         }
@@ -128,32 +122,34 @@ class Backup
             echo "debug: MEMORY: " . memory_get_usage(true) . " | " . memory_get_usage(false) . "\n";
         }
 
-        $appFiles = array();
-
         try {
-            #$appFiles = PodioFile::get_for_app($app->app_id, array('attached_to' => 'item'));
-            $appFiles = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', $app->app_id, array(), FILE_GET_FOR_APP_LIMIT);
-            echo "app files: " . sizeof($appFiles) . "\n";
-            #var_dump($appFiles);
-            PodioFetchAll::flattenObjectsArray($appFiles, PodioFetchAll::podioElements(
-                array('file_id' => null, 'name' => null, 'link' => null, 'hosted_by' => null,
-                    'context' => array('id' => NULL, 'type' => null, 'title' => null))));
-            if ($verbose)
-                echo "fetched information for " . sizeof($appFiles) . " files in app.\n";
+            if ($this->downloadFiles) {
+                PodioFetchAll::foreachItem('PodioFile::get_for_app', $app->app_id, array(), FILE_GET_FOR_APP_LIMIT, NULL,
+                    function ($podioFile, $raw_response) use ($orgName, $spaceName, $appName) {
+                        //TODO handle comment files with correct context!?
+                        //TODO save podio file metadata
+                        if ($podioFile->context['type'] == 'item') {
+                            $link = $this->storage->storePodioFile($podioFile, $orgName, $spaceName, $appName, $podioFile->context['id']);
+                        } else {
+                            $this->storage->storePodioFile($podioFile, $orgName, $spaceName, $appName);
+                        }
+                    });
+            }
         } catch (PodioError $e) {
             show_error($e);
-            //dummy
         }
 
 
         try {
             echo "fetching items for app $app->app_id\n";
-            $items_as_array = array();
-            $allitems = PodioFetchAll::iterateApiCall('PodioItem::filter', $app->app_id, array(), ITEM_FILTER_LIMIT, 'items', $items_as_array);
+            $totalItems = PodioFetchAll::foreachItem('PodioItem::filter', $app->app_id, array(), ITEM_FILTER_LIMIT, 'items',
+                function ($item, $raw) use ($orgName, $spaceName, $appName) {
+                    $this->backup_item($item, $orgName, $spaceName, $appName, $raw);
+                });
 
-            echo "app contains " . sizeof($allitems) . " items.\n";
+            echo "app contains " . $totalItems . " items.\n";
 
-            for ($i = 0; $i < sizeof($allitems); $i += ITEM_XLSX_LIMIT) {
+            for ($i = 0; $i < $totalItems; $i += ITEM_XLSX_LIMIT) {
                 $itemFile = PodioItem::xlsx($app->app_id, array("limit" => ITEM_XLSX_LIMIT, "offset" => $i));
                 RateLimitChecker::preventTimeOut();
                 $this->storage->storeFile(
@@ -164,25 +160,6 @@ class Backup
             $before = time();
             gc_collect_cycles();
             echo "gc took : " . (time() - $before) . " seconds.\n";
-
-            for ($i = 0; $i < sizeof($allitems); $i++) {
-                $this->backup_item($allitems[$i], $appFiles, $orgName, $spaceName, $appName, $items_as_array[$i]);
-            }
-            //store non item/comment files:
-            if ($verbose)
-                echo "storing non item/comment files..\n";
-            $app_files_folder = 'other_files';
-
-            foreach ($appFiles as $file) {
-                if ($file->context['type'] != 'item' && $file->context['type'] != 'comment') {
-                    echo "debug: downloading non item/comment file: $file->name\n";
-                    if ($this->downloadFiles) {
-                        $link = $this->storage->storePodioFile($file, $orgName, $spaceName, $appName);
-                    } else {
-                        $link = $file->link;
-                    }
-                }
-            }
         } catch (PodioError $e) {
             show_error($e);
         }
@@ -190,26 +167,16 @@ class Backup
 
     /**
      * @param $item
-     * @param $appFiles
      * @param $orgName
      * @param $spaceName
      * @param $appName
      * @param $item_as_array should reflect the original/raw API response
      */
-    function backup_item(PodioItem $item, $appFiles, $orgName, $spaceName, $appName, $item_as_array)
+    function backup_item(PodioItem $item, $orgName, $spaceName, $appName, $item_as_array)
     {
         global $verbose;
         if ($verbose)
             echo " - " . $item->title . "\n";
-
-        if ($this->downloadFiles) {
-            foreach ($appFiles as $file) {
-
-                if ($file->context['type'] == 'item' && $file->context['id'] == $item->item_id) {
-                    $link = $this->storage->storePodioFile($file, $orgName, $spaceName, $appName, $item->item_id);
-                }
-            }
-        }
 
         //store images:
         foreach ($item->fields as $field) {

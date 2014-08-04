@@ -180,50 +180,6 @@ function do_backup($downloadFiles) {
         show_success("Backup Completed successfully to " . $backupTo . "/" . $timeStamp);
 }
 
-function contacts2text($contacts) {
-    $contactsFile = "";
-    foreach ($contacts as $contact) {
-        $contactsFile .= '--- ' . $contact->name . ' ---' . "\n";
-        if (isset($contact->profile_id))
-            $contactsFile .= 'Profile ID: ' . $contact->profile_id . "\n";
-        if (isset($contact->user_id))
-            $contactsFile .= 'User ID: ' . $contact->user_id . "\n";
-        if (isset($contact->name))
-            $contactsFile .= 'Name: ' . $contact->name . "\n";
-        if (isset($contact->location) && is_array($contact->location))
-            $contactsFile .= 'Location: ' . implode(', ', $contact->location) . "\n";
-        //if (isset($contact->about)) $contactsFile .= 'About: '.$contact->about."\n";
-        if (isset($contact->mail) && is_array($contact->mail))
-            $contactsFile .= 'Email Address: ' . implode(', ', $contact->mail) . "\n";
-        if (isset($contact->phone) && is_array($contact->phone))
-            $contactsFile .= 'Phone Number: ' . implode(', ', $contact->phone) . "\n";
-        if (isset($contact->url) && is_array($contact->url))
-            $contactsFile .= 'Website: ' . implode(', ', $contact->url) . "\n";
-        if (isset($contact->title) && is_array($contact->title))
-            $contactsFile .= 'Title: ' . implode(', ', $contact->title) . "\n";
-        if (isset($contact->organization))
-            $contactsFile .= 'Organization: ' . $contact->organization . "\n";
-        if (isset($contact->address) && is_array($contact->address))
-            $contactsFile .= 'Address: ' . implode(', ', $contact->address) . "\n";
-        if (isset($contact->city))
-            $contactsFile .= 'City: ' . $contact->city . "\n";
-        if (isset($contact->state))
-            $contactsFile .= 'State: ' . $contact->state . "\n";
-        if (isset($contact->zip))
-            $contactsFile .= 'Zip: ' . $contact->zip . "\n";
-        if (isset($contact->country))
-            $contactsFile .= 'Country: ' . $contact->country . "\n";
-        if (isset($contact->birthdate))
-            $contactsFile .= 'Birth Date: ' . $contact->birthdate->format('Y-m-d') . "\n";
-        if (isset($contact->twitter))
-            $contactsFile .= 'Twitter: ' . $contact->twitter . "\n";
-        if (isset($contact->linkedin))
-            $contactsFile .= 'LinkedIn: ' . $contact->linkedin . "\n";
-        $contactsFile .= "\n\n";
-    }
-    return $contactsFile;
-}
-
 /**
  * TODO the current approach is just fast forward - could be made more sophisticated - e.g. \F6->oe..
  *

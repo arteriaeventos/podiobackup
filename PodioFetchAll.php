@@ -30,13 +30,95 @@ class PodioFetchAll
         }
     }
 
-    public static function getRawResponse($resulttype = null) {
+    public static function getRawResponse($resulttype = null)
+    {
         $result = array();
         self::storeRawResponse($result, $resulttype);
         return $result;
     }
 
     /**
+     * Wrapper to fetch all elements besides some from podio imposed maxresult.
+     *
+     * Examples:
+     *
+     * $result = PodioFetchAll::iterateApiCall('PodioFile::get_for_app', "YOUR_APP_ID", array('attached_to' => 'item'), null, function($item, $raw){
+     *      //do something with it
+     * });
+     * $result = PodioFetchAll::iterateApiCall('PodioItem::filter', "YOUR_APP_ID", array(), "items", function($item, $raw){
+     *      //do something with it
+     * });
+     *
+     * @param string $function e.g. 'PodioFile::get_for_app'
+     * @param type $id first parameter of function
+     * @param array $params
+     * @param int $limit no of elements fetched on each call
+     * @param string $resulttype if set, the result of the call is suspected to be in $result[$resulttype]
+     * @param callable $apply first parameter: the podio item, second parameter: the raw result
+     * @return int number of items interated over
+     */
+    public static function foreachItem($function, $id, $params = array(), $limit = 100, $resulttype = null, $apply)
+    {
+        $completed = false;
+        $iteration = 0;
+        $total = -1;
+        while (!$completed) {
+            #$tmp_result = $function($id, array_merge($params, array("limit" => $limit, 'offset' => $limit * $iteration)));
+            $tmp_result = call_user_func($function, $id, array_merge($params, array('limit' => $limit, 'offset' => $limit * $iteration)));
+            $raw_responses = array();
+            self::storeRawResponse($raw_responses, $resulttype);
+            RateLimitChecker::preventTimeOut();
+            echo "done iteration $iteration\n"; #(result: " . var_dump($tmp_result) . ")\n";
+
+            $iteration++;
+            $item_responses = null;
+
+            if ($tmp_result instanceof PodioCollection) {
+                $item_responses = $tmp_result->_get_items();
+                if ($tmp_result instanceof PodioItemCollection) {
+                    echo "filtered: $tmp_result->filtered, total: $tmp_result->total (limit: $limit)\n";
+                    if (sizeof($tmp_result->_get_items()) < $limit) {
+                        $completed = true;
+                        $total = $limit * ($iteration - 1) + sizeof($tmp_result->_get_items());
+                    }
+                } else {
+                    echo "WARNING unexpected collection: " . get_class($tmp_result);
+                }
+            } else if ((!is_null($resulttype)) && isset($resulttype)) {
+                if (is_array($tmp_result) && isset($tmp_result[$resulttype]) && is_array($tmp_result[$resulttype])) {
+                    $item_responses = $tmp_result[$resulttype];
+                    if (sizeof($tmp_result[$resulttype]) < $limit) {
+                        $completed = true;
+                        $total = $limit * ($iteration - 1) + sizeof($tmp_result[$resulttype]);
+                    }
+                } else {
+                    $completed = true;
+                    $total = $limit * ($iteration - 1);
+                }
+            } else {
+                if (is_array($tmp_result)) {
+                    $item_responses = $tmp_result;
+                    if (sizeof($tmp_result) < $limit) {
+                        $completed = true;
+                        $total = $limit * ($iteration - 1) + sizeof($tmp_result);
+                    }
+                } else {
+                    $completed = true;
+                    $total = $limit * ($iteration - 1);
+                }
+            }
+            unset($tmp_result);
+
+            for ($i = 0; $i < sizeof($item_responses); $i++) {
+                $apply($item_responses[$i], $raw_responses[$i]);
+            }
+        }
+        return $total;
+    }
+
+    /**
+     * @deprecated (leads to high memory usage!) use #foreachItem<br>
+     *
      * Wrapper to fetch all elements besides some from podio imposed maxresult.
      *
      * Examples:

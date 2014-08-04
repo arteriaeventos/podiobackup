@@ -1,4 +1,6 @@
 RewriteEngine On
+RewriteRule ^$ /view [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ rest-api.php [QSA,L]
+
