@@ -129,7 +129,7 @@ class Backup
                         //TODO handle comment files with correct context!?
                         //TODO save podio file metadata
                         if ($podioFile->context['type'] == 'item') {
-                            $link = $this->storage->storePodioFile($podioFile, $orgName, $spaceName, $appName, $podioFile->context['id']);
+                            $this->storage->storePodioFile($podioFile, $orgName, $spaceName, $appName, $podioFile->context['id']);
                         } else {
                             $this->storage->storePodioFile($podioFile, $orgName, $spaceName, $appName);
                         }
@@ -198,7 +198,7 @@ class Backup
                 $comment = $comments[$i];
                 if ($this->downloadFiles && isset($comment->files) && sizeof($comment->files) > 0) {
                     foreach ($comment->files as $file) {
-                        $link = $this->storage->storePodioFile($file);
+                        $this->storage->storePodioFile($file, $orgName, $spaceName, $appName, $item->item_id);
                     }
                 }
                 $this->storage->store($raw_commtents[$i], 'original comment', $orgName, $spaceName, $appName, $item->item_id);

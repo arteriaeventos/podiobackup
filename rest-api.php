@@ -12,16 +12,7 @@ function getMongo()
 {
     global $mongo;
     if (!isset($mongo) || is_null($mongo)) {
-        $dbhost = getenv('OPENSHIFT_MONGODB_DB_HOST');
-        if ($dbhost != false) {
-            $dbport = getenv('OPENSHIFT_MONGODB_DB_PORT');
-            $user = "admin";
-            $password = "IZ7ZCYaV8KrM";
-
-            $mongo = new MongoClient("mongodb://$user:$password@$dbhost:$dbport/");
-        } else {
-            $mongo = new MongoClient();
-        }
+        $mongo = Storage::getMongo();
     }
     return $mongo;
 }
@@ -380,6 +371,7 @@ Flight::route('POST /backupcollection/@backupcollection', function ($backupcolle
             $user = getUser();
             $command = "php podio_backup_full_cli.php"
                 . " -f"
+                . " -v"
                 . " --db " . $user['db']
                 . " --backupTo $backupcollection"
                 . " --podioClientId podio-backup14"
