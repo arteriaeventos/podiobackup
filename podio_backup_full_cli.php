@@ -37,24 +37,24 @@ global $start;
 $start = time();
 
 global $config;
-$config_command_line = getopt("fvs:l:", array("db:", "backupTo:", "podioClientId:", "podioClientSecret:", "podioUser:", "podioPassword:", "podioSpace:", "help"));
+$config_command_line = getopt("fvs:l:", array("db:", "backupTo:", "podioClientId:", "podioClientSecret:", "podioUser:", "podioPassword:", "podioSpace:", "podioOrg:", "help"));
 
 $usage = "\nUsage:\n\n" .
-        "php podio_backup_full_cli [-f] [-v] [-s PARAMETER_FILE] --backupTo BACKUP_FOLDER" .
-        " --podioClientId PODIO_CLIENT_ID --podioClientSecret PODIO_CLIENT_SECRET " .
-        "--podioUser PODIO_USERNAME --podioPassword PODIO_PASSWORD --db MONGO_DB  [--podioSpace PODIO_SPACE_ID]\n\n" .
-        "php podio_backup_full_cli [-f] [-v] -l PARAMETER_FILE [--backupTo BACKUP_FOLDER]" .
-        " [--podioClientId PODIO_CLIENT_ID] [--podioClientSecret PODIO_CLIENT_SECRET] " .
-        "[--podioUser PODIO_USERNAME] [--podioPassword PODIO_PASSWORD]\n\n" .
-        "php podio_backup_full_cli --help" .
-        "\n\nArguments:\n" .
-        "   -f\tdownload files from podio (rate limit of 250/h applies!)\n" .
-        "   -v\tverbose\n" .
-        "   -s\tstore parameters in PARAMETER_FILE\n" .
-        "   -l\tload parameters from PARAMETER_FILE (parameters can be overwritten by command line parameters)\n" .
-        " \n" .
-        "BACKUP_FOLDER represents a (incremental) backup storage. " .
-        "I.e. consecutive backups only downloads new files.\n";
+    "php podio_backup_full_cli [-f] [-v] [-s PARAMETER_FILE] --backupTo BACKUP_FOLDER" .
+    " --podioClientId PODIO_CLIENT_ID --podioClientSecret PODIO_CLIENT_SECRET " .
+    "--podioUser PODIO_USERNAME --podioPassword PODIO_PASSWORD --db MONGO_DB  [--podioSpace PODIO_SPACE_ID|--podioOrg PODIO_ORG_ID]\n\n" .
+    "php podio_backup_full_cli [-f] [-v] -l PARAMETER_FILE [--backupTo BACKUP_FOLDER]" .
+    " [--podioClientId PODIO_CLIENT_ID] [--podioClientSecret PODIO_CLIENT_SECRET] " .
+    "[--podioUser PODIO_USERNAME] [--podioPassword PODIO_PASSWORD]\n\n" .
+    "php podio_backup_full_cli --help" .
+    "\n\nArguments:\n" .
+    "   -f\tdownload files from podio (rate limit of 250/h applies!)\n" .
+    "   -v\tverbose\n" .
+    "   -s\tstore parameters in PARAMETER_FILE\n" .
+    "   -l\tload parameters from PARAMETER_FILE (parameters can be overwritten by command line parameters)\n" .
+    " \n" .
+    "BACKUP_FOLDER represents a (incremental) backup storage. " .
+    "I.e. consecutive backups only downloads new files.\n";
 
 if (array_key_exists("help", $config_command_line)) {
     echo $usage;
@@ -91,13 +91,15 @@ if (check_config()) {
 $total_time = (time() - $start) / 60;
 echo "Duration: $total_time minutes.\n";
 
-function check_backup_folder() {
+function check_backup_folder()
+{
     return;
 }
 
 // END check_backup_folder
 
-function check_config() {
+function check_config()
+{
     global $config;
     Podio::$debug = true;
     try {
@@ -121,7 +123,8 @@ function check_config() {
 
 // END check_config
 
-function read_config($filename) {
+function read_config($filename)
+{
     global $config;
     $config['podioClientId'] = '';
     $config['podioClientSecret'] = '';
@@ -136,21 +139,25 @@ function read_config($filename) {
     $config = array_merge($config, unserialize($data));
 }
 
-function write_config($filename) {
+function write_config($filename)
+{
     global $config;
     $data = serialize($config);
     file_put_contents($filename, $data);
 }
 
-function show_error($error) {
+function show_error($error)
+{
     echo "ERROR: " . $error . "\n";
 }
 
-function show_success($message) {
+function show_success($message)
+{
     echo "Message: " . $message . "\n";
 }
 
-function do_backup($downloadFiles) {
+function do_backup($downloadFiles)
+{
     global $config, $verbose;
     if ($verbose)
         echo "Warning: This script may run for a LONG time\n";
@@ -170,6 +177,11 @@ function do_backup($downloadFiles) {
         RateLimitChecker::preventTimeOut();
         echo "backup space: $space->name\n";
         $backup->backup_space($space, PodioOrganization::get($space->org_id));
+    } else if (array_key_exists("podioOrg", $config)) {
+        $org = PodioOrganization::get($config['podioOrg']);
+        RateLimitChecker::preventTimeOut();
+        echo "backup org: $org->name\n";
+        $backup->backup_org($org);
     } else {
         $backup->backup_all();
     }
@@ -186,7 +198,8 @@ function do_backup($downloadFiles) {
  * @param String $name
  * @return String valid dir/file name
  */
-function fixDirName($name) {
+function fixDirName($name)
+{
     $name = preg_replace("/[^.a-zA-Z0-9_-]/", '', $name);
 
     $name = substr($name, 0, 25);
@@ -207,7 +220,8 @@ function fixDirName($name) {
  * @param type $file
  * @return String link relative to $folder or weblink
  */
-function downloadFileIfHostedAtPodio($folder, $file) {
+function downloadFileIfHostedAtPodio($folder, $file)
+{
     global $config;
 
     $link = $file->link;
@@ -240,9 +254,9 @@ function downloadFileIfHostedAtPodio($folder, $file) {
                 $filestore[$file->file_id] = RelativePaths::getRelativePath($config['backupTo'], $folder . '/' . $filename);
                 file_put_contents($filenameFilestore, serialize($filestore));
             } catch (PodioBadRequestError $e) {
-                echo $e->body;   # Parsed JSON response from the API
+                echo $e->body; # Parsed JSON response from the API
                 echo $e->status; # Status code of the response
-                echo $e->url;    # URI of the API request
+                echo $e->url; # URI of the API request
                 // You normally want this one, a human readable error description
                 echo $e->body['error_description'];
             }

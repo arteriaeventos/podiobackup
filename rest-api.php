@@ -386,12 +386,12 @@ function backupIterationCreate($backupcollection)
                 . " -f"
                 . " -v"
                 . " --db " . $user['db']
-                . " --backupTo $backupcollection"
+                . " --backupTo \"$backupcollection\""
                 . " --podioClientId podio-backup14"
                 . " --podioClientSecret lL7Rj2tOT1u59IqojbVN2lVl0sWIjmpwLQoBGbpflw5fnasmKgusrFwr82HX5USq"
                 . " --podioUser " . $user['podioUser']
                 . " --podioPassword " . $user['podioPassword']
-                . (isset($backupMetadata['spaceId']) ? " --podioSpace " . $backupMetadata['spaceId'] : "")
+                . (isset($backupMetadata['spaceId']) ? " --podioSpace " . $backupMetadata['spaceId'] : (isset($backupMetadata['orgId']) ? " --podioOrg " . $backupMetadata['orgId'] : ""))
                 . " > $backupcollection.log"
                 . " &";
             error_log("executing command: $command", 3, 'myphperror.log');
@@ -465,7 +465,7 @@ function filesGet($backupcollection, $backupiteration, $org, $space, $app, $item
         'app' => $app,
         'podioItemId' => is_null($item) ? null : intval($item)
     );
-    error_log("query_params: " . var_export($query_params, true) . "\n", 3, 'myphperror.log');
+    #error_log("query_params: " . var_export($query_params, true) . "\n", 3, 'myphperror.log');
 
     $query = array();
     foreach ($query_params as $key => $value) {
@@ -478,7 +478,7 @@ function filesGet($backupcollection, $backupiteration, $org, $space, $app, $item
         }
     }
 
-    error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
+    #error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
 
     $files = getDbForUser()->getGridFS()->find($query);
     $result = array();
@@ -499,8 +499,8 @@ function filesGet($backupcollection, $backupiteration, $org, $space, $app, $item
         }
     }
 
-    error_log("files: " . var_export($files, true) . "\n", 3, 'myphperror.log');
-    error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
+    #error_log("files: " . var_export($files, true) . "\n", 3, 'myphperror.log');
+    #error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
 
     Flight::json($result);
 }

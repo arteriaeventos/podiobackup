@@ -38,7 +38,12 @@ class Backup
             echo "Org: " . $org->name . "\n";
 
         try {
-            PodioFetchAll::foreachItem('PodioContact::get_for_org', $org->org_id, array(), 100, null,
+            $params = array(
+                'type' => 'full',
+                'contact_type' => 'space,user',
+                'exclude_self' => 'false'
+            );
+            PodioFetchAll::foreachItem('PodioContact::get_for_org', $org->org_id, $params, 100, null,
                 function ($contact, $raw) use ($org) {
                     //TODO add view for org contacts
                     $this->storage->storePodioContact($contact, $raw, $org->name);
@@ -47,7 +52,12 @@ class Backup
             show_error($e);
         }
 
-        foreach ($org->spaces as $space) { // space_id
+        $spaces = $org->spaces;
+        if(is_null($spaces)) {
+            $spaces = PodioSpace::get_for_org($org->org_id);
+            RateLimitChecker::preventTimeOut();
+        }
+        foreach ($spaces as $space) { // space_id
             $this->backup_space($space, $org);
         }
     }
