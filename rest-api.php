@@ -2,6 +2,7 @@
 
 require 'flight/flight/Flight.php';
 require_once 'Storage.php';
+require_once 'PodioFetchAll.php';
 
 /**
  *
@@ -260,10 +261,15 @@ Flight::route('GET /account', function () {
         'scale' => 1
     ));
     $account = getMongo()->selectDB('application')->selectCollection('accounts')->findOne(array('account' => getUser()['db']));
+    Podio::setup('podio-backup14', 'lL7Rj2tOT1u59IqojbVN2lVl0sWIjmpwLQoBGbpflw5fnasmKgusrFwr82HX5USq');
+    Podio::authenticate('password', array('username' => $account['podioUser'], 'password' => $account['podioPassword']));
+    $orgs = PodioOrganization::get_all();
+    $orgs_raw = PodioFetchAll::getRawResponse();
     Flight::json(array(
         'used_storage' => $dbStats['dataSize'],
         'max_storage' => is_null($account) ? null : $account['maxStorage'],
-        'other_data' => $dbStats
+        'other_data' => $dbStats,
+        'available_orgs' => $orgs_raw
     ));
 });
 
@@ -312,18 +318,27 @@ Flight::route('/backupcollection/@backupcollection/backupiteration/count', funct
     Flight::json(sizeof($collection->distinct('backupId')));
 });
 
-Flight::route('PUT /backupcollection/@backupcollection', function ($backupcollection) {
+Flight::route('POST /backupcollection/@backupcollection/create', function ($backupcollection) {
     if (in_array($backupcollection, getDbForUser()->getCollectionNames())) {
         Flight::halt(409, "backup with given name exists ($backupcollection).");
     } else {
         $collection = getDbForUser()->createCollection($backupcollection);
-        $spaceId = Flight::request()->query['spaceId'];
+        $requestData = Flight::request()->data->getData();
+        $spaceId = $requestData['spaceId'];
+        $spaceName = $requestData['spaceName'];
+        $orgId = $requestData['orgId'];
+        $orgName = $requestData['orgName'];
         $backupMetadata = array(
             'createdOn' => new MongoDate(),
             'description' => 'backup metadata'
         );
         if (isset($spaceId) && $spaceId != null) {
             $backupMetadata['spaceId'] = $spaceId;
+            $backupMetadata['spaceName'] = $spaceName;
+        }
+        if (isset($orgId) && $orgId != null) {
+            $backupMetadata['orgId'] = $orgId;
+            $backupMetadata['orgName'] = $orgName;
         }
         $collection->save($backupMetadata);
     }
