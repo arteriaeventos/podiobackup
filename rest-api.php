@@ -206,7 +206,9 @@ function guiTree($backupcollection, $backupiteration, $org, $space, $app)
     } else if (is_null($backupiteration)) {
         $collection = getDbForUser()->selectCollection($backupcollection);
         $backups = flatten($collection->distinct('backupId'));
-        $backups = filterNULL(array_merge($backups, flatten(getDbForUser()->getGridFS()->distinct('backupId'))));
+        error_log("iterations from collection: " . var_export($backups, true) . "\n", 3, 'myphperror.log');
+        $backups = array_unique(filterNULL(array_merge($backups, flatten(getDbForUser()->getGridFS()->distinct('backupId')))));
+        error_log("all iterations: " . var_export($backups, true) . "\n", 3, 'myphperror.log');
 
         foreach ($backups as $backup) {
             array_push($result, array(
@@ -367,6 +369,26 @@ function backupCollectionGet($backupcollection)
     }
 }
 
+function backupIterationDelete($backupcollection, $backupiteration)
+{
+    $collection = getDbForUser()->selectCollection($backupcollection);
+    //remove items (not reused over different iterations):
+    $collection->remove(array(ITERATION => $backupiteration));
+    //remove files (reused over different iterations!):
+    getDbForUser()->getGridFS()->remove(array(ITERATION => array($backupiteration)));
+    $success = getDbForUser()->getGridFS()->update(
+        array(
+            ITERATION => $backupiteration
+            //(ITERATION . '.1') => array('$exists' => true) //have at least 2 elements
+        ),
+        array(
+            '$pull' => array(ITERATION => $backupiteration)
+        ),
+        array(
+            'multiple' => true
+        ));
+}
+
 function backupIterationCreate($backupcollection)
 {
     if (!in_array($backupcollection, getDbForUser()->getCollectionNames())) {
@@ -465,8 +487,6 @@ function filesGet($backupcollection, $backupiteration, $org, $space, $app, $item
         'app' => $app,
         'podioItemId' => is_null($item) ? null : intval($item)
     );
-    #error_log("query_params: " . var_export($query_params, true) . "\n", 3, 'myphperror.log');
-
     $query = array();
     foreach ($query_params as $key => $value) {
         if (is_null($value)) {
@@ -477,8 +497,6 @@ function filesGet($backupcollection, $backupiteration, $org, $space, $app, $item
             $query[$key] = $value;
         }
     }
-
-    #error_log("query: " . var_export($query, true) . "\n", 3, 'myphperror.log');
 
     $files = getDbForUser()->getGridFS()->find($query);
     $result = array();
@@ -498,9 +516,6 @@ function filesGet($backupcollection, $backupiteration, $org, $space, $app, $item
             ));
         }
     }
-
-    #error_log("files: " . var_export($files, true) . "\n", 3, 'myphperror.log');
-    #error_log("result: " . var_export($result, true) . "\n", 3, 'myphperror.log');
 
     Flight::json($result);
 }
@@ -572,6 +587,8 @@ Flight::set('flight.log_errors', true);
 Flight::route('/login', 'userLogin');
 
 Flight::route('GET /backupcollection/@backupcollection/backupiteration/@backupiteration', 'backupIterationGet');
+
+Flight::route('DELETE /backupcollection/@backupcollection/backupiteration/@backupiteration', 'backupIterationDelete');
 
 Flight::route('/gui/tree(/backupcollection/@backupcollection(/backupiteration/@backupiteration(/org/@org(/space/@space(/app/@app)))))', 'guiTree');
 

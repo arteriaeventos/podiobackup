@@ -107,6 +107,8 @@ and open the template in the editor.
     <h1>Backup Iteration</h1>
 
     <div id="backup-iteration-status">Status:</div>
+    <br>
+    <button id="delete_iteration_button" title="Deletes this backup iterations.">Delete</button>
 
     <h2>Files</h2>
 
@@ -868,6 +870,21 @@ jQuery(document).ready(function () {
                 }
             }
         ]
+    });
+
+    //TODO refactor with second delete button?!
+    $('#delete_iteration_button').on('click', function (e, data) {
+        $.ajax({
+            url: currententityurl,
+            type: 'DELETE',
+            success: function () {
+                var tree = $('#treeview').jstree(true);
+                var selectedNode = tree.get_selected(true)[0];
+                tree.deselect_all();
+                tree.select_node(tree.get_parent(selectedNode));
+                reloadSubtree(tree.get_parent(selectedNode));
+            }
+        });
     });
 
     $('#delete_backup_button').on('click', function (e, data) {
